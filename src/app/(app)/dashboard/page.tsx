@@ -1,50 +1,60 @@
-export default function DashboardPage() {
+import { getRequiredSession } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
+import { DashboardClient } from "./DashboardClient";
+
+export default async function DashboardPage() {
+  const session = await getRequiredSession();
+
+  // Fetch all apps for stats
+  const applications = await prisma.application.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  const stats = {
+    total: applications.length,
+    bookmarked: applications.filter((a) => a.status === "BOOKMARKED").length,
+    applied: applications.filter((a) => a.status === "APPLIED").length,
+    screening: applications.filter((a) => a.status === "SCREENING").length,
+    interview: applications.filter((a) => a.status === "INTERVIEW").length,
+    offer: applications.filter((a) => a.status === "OFFER").length,
+    rejected: applications.filter((a) => a.status === "REJECTED").length,
+    avgMatchScore:
+      applications.filter((a) => a.matchScore !== null).length > 0
+        ? Math.round(
+            applications
+              .filter((a) => a.matchScore !== null)
+              .reduce((sum, a) => sum + (a.matchScore ?? 0), 0) /
+              applications.filter((a) => a.matchScore !== null).length
+          )
+        : null,
+    responseRate:
+      applications.filter((a) => a.status !== "BOOKMARKED").length > 0
+        ? Math.round(
+            (applications.filter((a) =>
+              ["SCREENING", "INTERVIEW", "OFFER"].includes(a.status)
+            ).length /
+              applications.filter((a) => a.status !== "BOOKMARKED").length) *
+              100
+          )
+        : null,
+  };
+
+  const recentApps = applications.slice(0, 5).map((app) => ({
+    ...app,
+    jdParsed: app.jdParsed as Record<string, unknown> | null,
+    matchAnalysis: app.matchAnalysis as Record<string, unknown> | null,
+    appliedAt: app.appliedAt.toISOString(),
+    createdAt: app.createdAt.toISOString(),
+    updatedAt: app.updatedAt.toISOString(),
+  }));
+
   return (
-    <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Dashboard</h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Overview of your job search pipeline
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total Applications", value: "0", icon: "📋", change: "+0 this week" },
-          { label: "Interviews", value: "0", icon: "🎯", change: "0% response rate" },
-          { label: "Avg Match Score", value: "—", icon: "⚡", change: "Upload resume to start" },
-          { label: "Offers", value: "0", icon: "🎉", change: "Keep going!" },
-        ].map((stat, i) => (
-          <div key={i} className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl">{stat.icon}</span>
-            </div>
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{stat.value}</p>
-            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{stat.label}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-2">{stat.change}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty state */}
-      <div className="glass rounded-2xl p-12 text-center">
-        <div className="text-5xl mb-4">🚀</div>
-        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
-          Start Tracking Applications
-        </h2>
-        <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-6">
-          Add your first job application to see your pipeline come to life.
-          Paste a job URL and let AI extract all the details.
-        </p>
-        <a href="/applications" className="btn-primary inline-flex items-center gap-2">
-          Go to Applications
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-    </div>
+    <DashboardClient
+      stats={stats}
+      recentApps={recentApps}
+      userName={session.user.name || session.user.email || "there"}
+    />
   );
 }
