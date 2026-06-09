@@ -18,6 +18,7 @@ interface ApplicationCardProps {
   isDragging?: boolean;
   onDelete: (id: string) => void;
   onUpdate: (app: Application) => void;
+  onClick?: (app: Application) => void;
 }
 
 export function ApplicationCard({
@@ -25,6 +26,7 @@ export function ApplicationCard({
   isDragging,
   onDelete,
   onUpdate,
+  onClick,
 }: ApplicationCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortDragging } =
@@ -51,7 +53,8 @@ export function ApplicationCard({
       style={style}
       {...attributes}
       {...listeners}
-      className={`card-interactive group relative select-none transition-all duration-200 ${
+      onClick={() => onClick?.(application)}
+      className={`card-interactive group relative select-none cursor-pointer transition-all duration-200 ${
         isDragging || isSortDragging
           ? "opacity-50 rotate-1 scale-105 shadow-2xl"
           : ""

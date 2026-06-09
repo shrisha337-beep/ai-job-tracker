@@ -47,6 +47,7 @@ interface KanbanColumnProps {
   applications: Application[];
   onDelete: (id: string) => void;
   onUpdate: (app: Application) => void;
+  onClick: (app: Application) => void;
 }
 
 export function KanbanColumn({
@@ -55,6 +56,7 @@ export function KanbanColumn({
   applications,
   onDelete,
   onUpdate,
+  onClick,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const style = STATUS_STYLES[id];
@@ -110,6 +112,7 @@ export function KanbanColumn({
                 application={app}
                 onDelete={onDelete}
                 onUpdate={onUpdate}
+                onClick={onClick}
               />
             ))
           )}

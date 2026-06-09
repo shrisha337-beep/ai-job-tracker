@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useOptimistic, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -26,11 +26,20 @@ const COLUMNS: { id: Application["status"]; label: string }[] = [
 ];
 
 interface KanbanBoardProps {
-  initialApplications: Application[];
+  applications: Application[];
+  setApplications: React.Dispatch<React.SetStateAction<Application[]>>;
+  onUpdate: (app: Application) => void;
+  onDelete: (id: string) => void;
+  onClickCard: (app: Application) => void;
 }
 
-export function KanbanBoard({ initialApplications }: KanbanBoardProps) {
-  const [applications, setApplications] = useState(initialApplications);
+export function KanbanBoard({
+  applications,
+  setApplications,
+  onUpdate,
+  onDelete,
+  onClickCard,
+}: KanbanBoardProps) {
   const [activeApp, setActiveApp] = useState<Application | null>(null);
   const [, startTransition] = useTransition();
 
@@ -92,6 +101,9 @@ export function KanbanBoard({ initialApplications }: KanbanBoardProps) {
           setApplications((prev) =>
             prev.map((a) => (a.id === activeId ? { ...a, status: app.status } : a))
           );
+        } else {
+          const { application: updated } = await res.json();
+          onUpdate(updated);
         }
       } catch {
         setApplications((prev) =>
@@ -99,16 +111,6 @@ export function KanbanBoard({ initialApplications }: KanbanBoardProps) {
         );
       }
     });
-  };
-
-  const handleDelete = (id: string) => {
-    setApplications((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const handleUpdate = (updated: Application) => {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === updated.id ? updated : a))
-    );
   };
 
   return (
@@ -126,8 +128,9 @@ export function KanbanBoard({ initialApplications }: KanbanBoardProps) {
             id={col.id}
             label={col.label}
             applications={applications.filter((a) => a.status === col.id)}
-            onDelete={handleDelete}
-            onUpdate={handleUpdate}
+            onDelete={onDelete}
+            onUpdate={onUpdate}
+            onClick={onClickCard}
           />
         ))}
       </div>
