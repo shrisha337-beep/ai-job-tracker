@@ -15,7 +15,8 @@ import {
   Briefcase, 
   Link2, 
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Building
 } from "lucide-react";
 
 interface ApplicationsClientProps {
