@@ -11,7 +11,7 @@ export default async function ApplicationsPage() {
   });
 
   // Serialize dates for client component
-  const serialized = applications.map((app) => ({
+  const serialized = applications.map((app: any) => ({
     ...app,
     jdParsed: app.jdParsed as Record<string, unknown> | null,
     matchAnalysis: app.matchAnalysis as Record<string, unknown> | null,

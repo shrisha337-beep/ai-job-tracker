@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node -e \"const u=require('fs').readFileSync('.env.local','utf8').match(/DATABASE_URL=\\\"([^\\\"]+)\\\"/)?.[1];require('child_process').execSync('npx prisma migrate dev --url '+u,{stdio:'inherit'})\"",

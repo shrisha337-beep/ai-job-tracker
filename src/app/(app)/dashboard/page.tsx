@@ -41,7 +41,7 @@ export default async function DashboardPage() {
         : null,
   };
 
-  const recentApps = applications.slice(0, 5).map((app) => ({
+  const recentApps = applications.slice(0, 5).map((app: any) => ({
     ...app,
     jdParsed: app.jdParsed as Record<string, unknown> | null,
     matchAnalysis: app.matchAnalysis as Record<string, unknown> | null,
