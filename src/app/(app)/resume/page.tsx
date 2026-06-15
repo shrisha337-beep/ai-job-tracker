@@ -52,8 +52,22 @@ export default function ResumePage() {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      
+      let errorMsg = "Upload failed";
+      let data = null;
+      
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+        if (data && data.error) {
+          errorMsg = data.error;
+        }
+      } else {
+        const text = await res.text();
+        errorMsg = `Server error (${res.status}): ${text.substring(0, 100)}`;
+      }
+      
+      if (!res.ok) throw new Error(errorMsg);
       setUploadSuccess(`✅ "${file.name}" uploaded successfully!`);
       await loadResumes();
     } catch (err) {
