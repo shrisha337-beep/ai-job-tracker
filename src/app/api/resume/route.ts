@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
       rawText = await file.text(); // will be garbled for binary but stored
     }
 
+    // Remove null bytes (\u0000) because PostgreSQL does not support them in text columns
+    rawText = rawText.replace(/\u0000/g, "");
+
     if (rawText.trim().length < 50) {
       return NextResponse.json(
         { error: "Could not extract text from file. Please try a .txt version of your resume." },
