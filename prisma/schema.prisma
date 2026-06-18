@@ -100,3 +100,19 @@ enum Status {
   OFFER
   REJECTED
 }
+
+model AICache {
+  id        String    @id @default(cuid())
+  hash      String    @unique
+  result    Json
+  type      CacheType
+  createdAt DateTime  @default(now())
+
+  @@index([hash])
+}
+
+enum CacheType {
+  JD_PARSE
+  RESUME_MATCH
+}
+
