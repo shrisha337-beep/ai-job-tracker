@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@prisma/client";
+import { z } from "zod";
+import { applicationSchema } from "@/lib/validations";
 
 // GET /api/applications - list all applications for the current user
 export async function GET(req: NextRequest) {
@@ -43,35 +45,45 @@ export async function GET(req: NextRequest) {
 
 // POST /api/applications - create a new application
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const body = await req.json();
-  const { company, role, status, sourceUrl, jdRaw, notes, salary, location, jobType } = body;
+    const body = await req.json();
+    
+    // Validate request body
+    const validatedData = applicationSchema.parse(body);
 
-  if (!company || !role) {
+    const application = await prisma.application.create({
+      data: {
+        userId: session.user.id,
+        company: validatedData.company.trim(),
+        role: validatedData.role.trim(),
+        status: validatedData.status || "BOOKMARKED",
+        sourceUrl: validatedData.sourceUrl?.trim() || null,
+        jdRaw: validatedData.jdRaw?.trim() || null,
+        notes: validatedData.notes?.trim() || null,
+        salary: validatedData.salary?.trim() || null,
+        location: validatedData.location?.trim() || null,
+        jobType: validatedData.jobType?.trim() || null,
+      },
+    });
+
+    return NextResponse.json({ application }, { status: 201 });
+  } catch (err) {
+    console.error("Application create error:", err);
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation failed", details: err.issues },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: "Company and role are required" },
-      { status: 400 }
+      { error: "Failed to create application" },
+      { status: 500 }
     );
   }
-
-  const application = await prisma.application.create({
-    data: {
-      userId: session.user.id,
-      company: company.trim(),
-      role: role.trim(),
-      status: status || "BOOKMARKED",
-      sourceUrl: sourceUrl?.trim() || null,
-      jdRaw: jdRaw?.trim() || null,
-      notes: notes?.trim() || null,
-      salary: salary?.trim() || null,
-      location: location?.trim() || null,
-      jobType: jobType?.trim() || null,
-    },
-  });
-
-  return NextResponse.json({ application }, { status: 201 });
 }
+

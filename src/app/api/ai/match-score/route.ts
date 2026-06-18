@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import { z } from "zod";
+import { matchScoreSchema } from "@/lib/validations";
+
 const MATCH_SYSTEM_PROMPT = `You are an expert ATS (Applicant Tracking System) and career coach. 
 Analyze how well a candidate's resume matches a job description and provide a detailed, actionable assessment.
 
@@ -22,54 +25,49 @@ Return ONLY valid JSON with this exact structure:
 }`;
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const body = await req.json();
-  const { applicationId, resumeId } = body;
-
-  if (!applicationId || !resumeId) {
-    return NextResponse.json(
-      { error: "applicationId and resumeId are required" },
-      { status: 400 }
-    );
-  }
-
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
-      { error: "OpenAI API key not configured" },
-      { status: 503 }
-    );
-  }
-
-  // Fetch both with ownership checks
-  const [application, resume] = await Promise.all([
-    prisma.application.findFirst({
-      where: { id: applicationId, userId: session.user.id },
-    }),
-    prisma.resume.findFirst({
-      where: { id: resumeId, userId: session.user.id },
-    }),
-  ]);
-
-  if (!application) {
-    return NextResponse.json({ error: "Application not found" }, { status: 404 });
-  }
-  if (!resume) {
-    return NextResponse.json({ error: "Resume not found" }, { status: 404 });
-  }
-
-  const jdText = application.jdRaw || JSON.stringify(application.jdParsed) || "";
-  if (!jdText || jdText.length < 50) {
-    return NextResponse.json(
-      { error: "This application has no job description. Add the JD first." },
-      { status: 400 }
-    );
-  }
-
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    
+    // Validate request body
+    const { applicationId, resumeId } = matchScoreSchema.parse(body);
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 503 }
+      );
+    }
+
+    // Fetch both with ownership checks
+    const [application, resume] = await Promise.all([
+      prisma.application.findFirst({
+        where: { id: applicationId, userId: session.user.id },
+      }),
+      prisma.resume.findFirst({
+        where: { id: resumeId, userId: session.user.id },
+      }),
+    ]);
+
+    if (!application) {
+      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    }
+    if (!resume) {
+      return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+    }
+
+    const jdText = application.jdRaw || JSON.stringify(application.jdParsed) || "";
+    if (!jdText || jdText.length < 50) {
+      return NextResponse.json(
+        { error: "This application has no job description. Add the JD first." },
+        { status: 400 }
+      );
+    }
+
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -110,9 +108,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ analysis });
   } catch (err) {
     console.error("Match score error:", err);
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation failed", details: err.issues },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to compute match score" },
       { status: 500 }
     );
   }
 }
+

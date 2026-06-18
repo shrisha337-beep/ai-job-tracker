@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import { z } from "zod";
+import { parseJdSchema } from "@/lib/validations";
+
 const PARSE_SYSTEM_PROMPT = `You are an expert job description parser. Extract structured information from job descriptions into clean JSON.
 
 Return ONLY valid JSON with this exact structure (omit fields if not found):
@@ -22,29 +25,24 @@ Return ONLY valid JSON with this exact structure (omit fields if not found):
 }`;
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const body = await req.json();
-  const { applicationId, jdText } = body;
-
-  if (!jdText || jdText.trim().length < 50) {
-    return NextResponse.json(
-      { error: "Job description is too short to parse" },
-      { status: 400 }
-    );
-  }
-
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
-      { error: "OpenAI API key not configured" },
-      { status: 503 }
-    );
-  }
-
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    
+    // Validate request body
+    const { applicationId, jdText } = parseJdSchema.parse(body);
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 503 }
+      );
+    }
+
     // Call OpenAI
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -104,9 +102,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ parsed });
   } catch (err) {
     console.error("JD parse error:", err);
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation failed", details: err.issues },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to parse JD" },
       { status: 500 }
     );
   }
 }
+
