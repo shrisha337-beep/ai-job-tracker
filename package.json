@@ -9,10 +9,16 @@
     "lint": "eslint",
     "db:migrate": "node -e \"const u=require('fs').readFileSync('.env.local','utf8').match(/DATABASE_URL=\\\"([^\\\"]+)\\\"/)?.[1];require('child_process').execSync('npx prisma migrate dev --url '+u,{stdio:'inherit'})\"",
     "db:generate": "npx prisma generate",
-    "db:studio": "node -e \"const u=require('fs').readFileSync('.env.local','utf8').match(/DATABASE_URL=\\\"([^\\\"]+)\\\"/)?.[1];require('child_process').execSync('npx prisma studio --url '+u,{stdio:'inherit'})\""
+    "db:studio": "node -e \"const u=require('fs').readFileSync('.env.local','utf8').match(/DATABASE_URL=\\\"([^\\\"]+)\\\"/)?.[1];require('child_process').execSync('npx prisma studio --url '+u,{stdio:'inherit'})\"",
+    "mobile:build": "echo Skipping static build: Pointing directly to Vercel URL",
+    "mobile:sync": "npx cap sync",
+    "mobile:open": "npx cap open android"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -25,6 +31,7 @@
     "lucide-react": "^1.17.0",
     "next": "16.2.7",
     "next-auth": "^4.24.14",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -34,9 +41,11 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",

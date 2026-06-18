@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import pdf from "pdf-parse";
 
 // POST /api/resume — upload and store resume text
 export async function POST(req: NextRequest) {
@@ -21,13 +22,14 @@ export async function POST(req: NextRequest) {
     const allowedTypes = [
       "text/plain",
       "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
 
-    if (!allowedTypes.includes(file.type) && !file.name.endsWith(".txt")) {
+    const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
+    const isTxt = file.type === "text/plain" || file.name.endsWith(".txt");
+
+    if (!isPdf && !isTxt) {
       return NextResponse.json(
-        { error: "Only PDF, DOC, DOCX, or TXT files are supported" },
+        { error: "Only PDF or TXT files are supported" },
         { status: 400 }
       );
     }
@@ -39,15 +41,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Read file text — for plain text files only for now
-    // PDF parsing would need pdf-parse library
+    // Read file text
     let rawText = "";
-    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+    if (isTxt) {
       rawText = await file.text();
-    } else {
-      // For PDF/DOCX we store a placeholder and prompt user
-      // In production you'd use pdf-parse or similar
-      rawText = await file.text(); // will be garbled for binary but stored
+    } else if (isPdf) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const parsed = await pdf(buffer);
+        rawText = parsed.text;
+      } catch (err) {
+        console.error("PDF parsing error:", err);
+        return NextResponse.json(
+          { error: "Failed to parse PDF file. Please ensure it is not password-protected." },
+          { status: 400 }
+        );
+      }
     }
 
     // Remove null bytes (\u0000) because PostgreSQL does not support them in text columns
@@ -55,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (rawText.trim().length < 50) {
       return NextResponse.json(
-        { error: "Could not extract text from file. Please try a .txt version of your resume." },
+        { error: "Could not extract text from file. Please ensure it has text content and try again." },
         { status: 400 }
       );
     }

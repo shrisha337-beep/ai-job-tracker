@@ -114,7 +114,7 @@ export default function ResumePage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.pdf,.doc,.docx"
+          accept=".txt,.pdf"
           className="hidden"
           onChange={handleFileChange}
           id="resume-file-input"
@@ -131,13 +131,13 @@ export default function ResumePage() {
               Drop your resume here
             </h3>
             <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
-              Supports TXT, PDF, DOC, DOCX · Max 5MB
+              Supports PDF, TXT · Max 5MB
             </p>
             <button className="btn-primary" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
               Browse File
             </button>
             <p className="text-xs text-[var(--color-muted)] mt-3">
-              💡 Tip: For best results, use a .txt version of your resume
+              💡 Tip: PDF resumes are fully supported and parsed automatically!
             </p>
           </>
         )}
