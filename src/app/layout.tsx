@@ -30,6 +30,11 @@ export const metadata: Metadata = {
       "Track job applications, parse JDs with AI, match your resume, and land more interviews.",
     type: "website",
   },
+  appleWebApp: {
+    capable: true,
+    title: "JobTracker AI",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({
