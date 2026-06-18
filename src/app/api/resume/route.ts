@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PDFParse } from "pdf-parse";
+import pdf from "pdf-parse";
+
+
 
 // POST /api/resume — upload and store resume text
 export async function POST(req: NextRequest) {
@@ -49,10 +51,8 @@ export async function POST(req: NextRequest) {
       try {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const parser = new PDFParse({ data: buffer });
-        const parsed = await parser.getText();
+        const parsed = await pdf(buffer);
         rawText = parsed.text;
-        await parser.destroy();
       } catch (err) {
         console.error("PDF parsing error:", err);
         return NextResponse.json(
