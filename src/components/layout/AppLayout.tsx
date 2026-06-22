@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
+import { Bot, MessageSquare } from "lucide-react";
+import ChatSidebar from "../chat/ChatSidebar";
 
 const navItems = [
   {
@@ -61,6 +63,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const handleActionTriggered = (action: any) => {
+    console.log("Chat action triggered:", action);
+    if (action.type === "MOVE_APPLICATION") {
+      // Soft refresh to update Kanban / Dashboard state dynamically
+      window.location.reload();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex">
@@ -213,14 +224,48 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
-          {/* Pro badge placeholder */}
+          {/* Header Action Controls */}
           <div className="flex items-center gap-3">
+            {/* Chatbot Header Button */}
+            <button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className="p-2 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)]/80 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-200 flex items-center gap-2 border border-[var(--border-primary)]"
+              title="Open Assistant"
+              id="chat-toggle-header-btn"
+            >
+              <Bot size={16} className="text-[var(--color-primary-light)]" />
+              <span className="text-xs font-medium hidden sm:inline">Ask AI</span>
+            </button>
+            
             <span className="badge badge-primary text-xs">Free Plan</span>
           </div>
         </header>
 
         {/* Page content */}
         <main className="p-4 lg:p-6">{children}</main>
+
+        {/* Floating Chat Trigger Button */}
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="fixed bottom-6 right-6 z-40 p-4 rounded-2xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-2xl transition-all duration-300 hover:scale-105 flex items-center justify-center border border-white/10 hover:shadow-glow-primary group"
+          id="chat-toggle-btn"
+          title="Toggle Chat Assistant"
+        >
+          <div className="relative">
+            <MessageSquare size={22} className="group-hover:rotate-12 transition-transform duration-300" />
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </div>
+        </button>
+
+        {/* Chatbot Side Drawer Panel */}
+        <ChatSidebar
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onActionTriggered={handleActionTriggered}
+        />
       </div>
     </div>
   );

@@ -44,6 +44,7 @@ model User {
   resumes       Resume[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  chatMessages  ChatMessage[]
 }
 
 model VerificationToken {
@@ -92,6 +93,19 @@ model Resume {
   @@index([userId])
 }
 
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ChatRole @default(USER)
+  content   String   @db.Text
+  metadata  Json?    // tool calls, action results, etc.
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
 enum Status {
   BOOKMARKED
   APPLIED
@@ -99,4 +113,10 @@ enum Status {
   INTERVIEW
   OFFER
   REJECTED
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }
