@@ -1,15 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Send, Bot, User, Sparkles, AlertCircle, Terminal } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { 
+  X, 
+  Send, 
+  Bot, 
+  User, 
+  Terminal,
+  Sparkles,
+  AlertCircle
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 interface ChatMessage {
   id: string;
-  role: "USER" | "ASSISTANT" | "SYSTEM";
+  role: "USER" | "ASSISTANT";
   content: string;
   createdAt: string;
-  metadata?: string;
 }
 
 interface ChatSidebarProps {
@@ -27,19 +34,17 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // Quick Action Chips
+  // Quick Action Chips (No Emojis)
   const quickActions = [
-    { label: "📋 Show pipeline", text: "Show my pipeline" },
-    { label: "💡 Help guide", text: "Help me" },
-    { label: "⚙️ Move Stripe", text: "Move Stripe to Interview" },
+    { label: "Pipeline Status", text: "Show my pipeline" },
+    { label: "Assistant Guide", text: "Help me" },
+    { label: "Move Application", text: "Move Stripe to Interview" },
   ];
 
-  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Fetch chat history
   useEffect(() => {
     if (isOpen) {
       fetchMessages();
@@ -50,14 +55,14 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
     scrollToBottom();
   }, [messages]);
 
-  // Handle click outside to close (optional but helpful)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         isOpen &&
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest("#chat-toggle-btn")
+        !(event.target as Element).closest("#chat-toggle-btn") &&
+        !(event.target as Element).closest("#chat-toggle-header-btn")
       ) {
         onClose();
       }
@@ -68,57 +73,58 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
 
   const fetchMessages = async () => {
     try {
-      setError(null);
       const res = await fetch("/api/chat");
-      if (!res.ok) throw new Error("Failed to fetch messages");
-      const data = await res.json();
-      setMessages(data.messages || []);
-    } catch (err: any) {
-      console.error(err);
-      setError("Unable to load chat history.");
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error("Failed to load chat history", err);
     }
   };
 
-  const handleSend = async (textToSend?: string) => {
-    const messageText = (textToSend || input).trim();
-    if (!messageText) return;
+  const handleSend = async (manualText?: string) => {
+    const textToSend = manualText || input;
+    if (!textToSend.trim() || isLoading) return;
 
-    if (!textToSend) setInput("");
-    setError(null);
-    setIsLoading(true);
-
-    // Optimistically append user message
-    const tempUserMsg: ChatMessage = {
-      id: Math.random().toString(),
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
       role: "USER",
-      content: messageText,
+      content: textToSend,
       createdAt: new Date().toISOString(),
     };
-    setMessages((prev) => [...prev, tempUserMsg]);
+
+    setMessages((prev) => [...prev, userMessage]);
+    if (!manualText) setInput("");
+    setIsLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: messageText }),
+        body: JSON.stringify({ message: textToSend }),
       });
 
-      if (!res.ok) throw new Error("Failed to send message");
-
-      const data = await res.json();
-      
-      // Append assistant message
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
+      if (!res.ok) {
+        throw new Error("Failed to process command.");
       }
 
-      // Check if bot performed any database update action
+      const data = await res.json();
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "ASSISTANT",
+        content: data.reply,
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
       if (data.action && onActionTriggered) {
         onActionTriggered(data.action);
       }
     } catch (err: any) {
-      console.error(err);
-      setError("Failed to send message. Please try again.");
+      setError(err.message || "Something went wrong.");
     } finally {
       setIsLoading(false);
     }
@@ -127,48 +133,45 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
   return (
     <div
       ref={sidebarRef}
-      className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[440px] bg-[var(--bg-secondary)]/90 backdrop-blur-xl border-l border-[var(--border-primary)] shadow-2xl flex flex-col transition-all duration-300 transform ${
+      className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[440px] bg-[#111114] border-l border-[#27272A] shadow-2xl flex flex-col transition-transform duration-200 ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
     >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-[var(--border-primary)]">
+      <div className="h-16 flex items-center justify-between px-5 border-b border-[#27272A] bg-[#09090B]">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-tr from-indigo-500 to-violet-500 shadow-glow-primary">
-            <Bot size={18} className="text-white" />
+          <div className="w-7 h-7 rounded-[2px] flex items-center justify-center bg-[#18181B] border border-[#27272A]">
+            <Bot size={15} className="text-[#FAFAFA]" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm text-[var(--text-primary)] flex items-center gap-1.5">
-              JobTracker Assistant
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+            <h3 className="font-bold text-xs uppercase tracking-wider text-[#FAFAFA] flex items-center gap-1.5">
+              Assistant
+              <span className="w-1.5 h-1.5 rounded-[1px] bg-[#10B981]" />
             </h3>
-            <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
-              <Terminal size={10} /> Local Dev Sandbox Mode
+            <p className="text-[10px] font-mono text-[#71717A] flex items-center gap-1">
+              <Terminal size={10} /> Local Pipeline Parser
             </p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          className="p-1 rounded-[2px] hover:bg-[#18181B] text-[#71717A] hover:text-[#FAFAFA] transition-colors"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs">
         {messages.length === 0 && !isLoading && (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--color-primary)]">
-              <Sparkles size={24} className="animate-pulse" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
+            <div className="w-10 h-10 rounded-[2px] bg-[#18181B] border border-[#27272A] flex items-center justify-center text-[#FAFAFA]">
+              <Sparkles size={18} />
             </div>
             <div>
-              <p className="font-medium text-sm text-[var(--text-primary)]">Start your AI Chat Automation</p>
-              <p className="text-xs text-[var(--text-muted)] max-w-[280px] mt-1">
-                Ask me to move application statuses, check your pipeline, or optimize your active resume.
+              <p className="font-bold uppercase text-xs text-[#FAFAFA]">Command Interface Ready</p>
+              <p className="text-[11px] text-[#71717A] max-w-[280px] mt-1 leading-relaxed">
+                Query pipeline records, move application statuses, or analyze qualification criteria.
               </p>
             </div>
           </div>
@@ -179,36 +182,34 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
           return (
             <div
               key={msg.id}
-              className={`flex gap-3 max-w-[85%] ${
+              className={`flex gap-2 max-w-[90%] ${
                 isAssistant ? "mr-auto" : "ml-auto flex-row-reverse"
               }`}
             >
-              {/* Avatar */}
               <div
-                className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-xs font-semibold ${
+                className={`w-6 h-6 rounded-[2px] shrink-0 flex items-center justify-center text-xs font-semibold ${
                   isAssistant
-                    ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                    : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-primary)]"
+                    ? "bg-[#18181B] text-[#FAFAFA] border border-[#27272A]"
+                    : "bg-[#27272A] text-[#FAFAFA]"
                 }`}
               >
-                {isAssistant ? <Bot size={14} /> : <User size={14} />}
+                {isAssistant ? <Bot size={12} /> : <User size={12} />}
               </div>
 
-              {/* Bubble */}
               <div
-                className={`p-3 rounded-2xl text-sm leading-relaxed border ${
+                className={`p-3 rounded-[2px] leading-relaxed border ${
                   isAssistant
-                    ? "bg-[var(--bg-tertiary)]/50 border-[var(--border-primary)] text-[var(--text-primary)]"
-                    : "bg-[var(--color-primary)]/10 border-[var(--color-primary)]/20 text-[var(--color-primary-light)]"
+                    ? "bg-[#18181B] border-[#27272A] text-[#FAFAFA]"
+                    : "bg-[#27272A] border-[#3F3F46] text-[#FAFAFA]"
                 }`}
               >
-                <div className="prose prose-invert max-w-none text-xs sm:text-sm space-y-1">
+                <div className="prose prose-invert max-w-none text-xs space-y-1">
                   <ReactMarkdown
                     components={{
-                      p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 my-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 my-1">{children}</ol>,
-                      li: ({ children }) => <li className="text-[var(--text-secondary)]">{children}</li>,
+                      p: ({ children }) => <p className="mb-1 last:mb-0 leading-relaxed">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc pl-4 space-y-0.5 my-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-4 space-y-0.5 my-1">{children}</ol>,
+                      li: ({ children }) => <li className="text-[#A1A1AA]">{children}</li>,
                       strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
                     }}
                   >
@@ -221,20 +222,18 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
         })}
 
         {isLoading && (
-          <div className="flex gap-3 mr-auto max-w-[85%] animate-pulse">
-            <div className="w-7 h-7 rounded-lg shrink-0 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-              <Bot size={14} className="text-indigo-400" />
+          <div className="flex gap-2 mr-auto max-w-[85%]">
+            <div className="w-6 h-6 rounded-[2px] shrink-0 bg-[#18181B] border border-[#27272A] flex items-center justify-center">
+              <Bot size={12} className="text-[#A1A1AA]" />
             </div>
-            <div className="p-3 bg-[var(--bg-tertiary)]/50 border border-[var(--border-primary)] rounded-2xl flex items-center space-x-1.5 h-9">
-              <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-              <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-              <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+            <div className="p-2.5 bg-[#18181B] border border-[#27272A] rounded-[2px] flex items-center space-x-1.5">
+              <span className="text-[10px] text-[#71717A] uppercase">Processing command...</span>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="flex gap-2 items-center justify-center p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs mt-2">
+          <div className="flex gap-2 items-center justify-center p-2.5 border border-[#EF4444]/30 bg-[#EF4444]/10 text-[#F87171] text-xs">
             <AlertCircle size={14} />
             <span>{error}</span>
           </div>
@@ -245,12 +244,12 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
 
       {/* Quick Actions Footer */}
       {messages.length < 5 && (
-        <div className="px-5 py-2 flex flex-wrap gap-1.5 border-t border-[var(--border-primary)]/50 bg-[var(--bg-secondary)]/40">
+        <div className="px-4 py-2 flex flex-wrap gap-1.5 border-t border-[#27272A] bg-[#09090B]">
           {quickActions.map((action, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(action.text)}
-              className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)]/80 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-primary)] transition-all duration-200"
+              className="text-[10px] font-mono uppercase px-2 py-1 rounded-[2px] bg-[#18181B] hover:bg-[#27272A] text-[#A1A1AA] hover:text-[#FAFAFA] border border-[#27272A] transition-colors"
             >
               {action.label}
             </button>
@@ -259,22 +258,22 @@ export default function ChatSidebar({ isOpen, onClose, onActionTriggered }: Chat
       )}
 
       {/* Input Form */}
-      <div className="p-4 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] flex gap-2">
+      <div className="p-3 border-t border-[#27272A] bg-[#09090B] flex gap-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Ask something... (e.g. 'help')"
+          placeholder="Enter command... (e.g. 'Show pipeline')"
           disabled={isLoading}
-          className="flex-1 px-4 py-2.5 rounded-xl text-sm bg-[var(--bg-tertiary)] border border-[var(--border-primary)] focus:border-[var(--color-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all duration-200"
+          className="flex-1 px-3 py-2 rounded-[2px] text-xs font-mono bg-[#18181B] border border-[#27272A] focus:border-[#FAFAFA] text-[#FAFAFA] placeholder-[#71717A] focus:outline-none transition-colors"
         />
         <button
           onClick={() => handleSend()}
           disabled={isLoading || !input.trim()}
-          className="p-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-[var(--bg-tertiary)] text-white disabled:text-[var(--text-muted)] border border-transparent disabled:border-[var(--border-primary)] transition-all duration-200 flex items-center justify-center shadow-glow-primary"
+          className="px-3 py-2 rounded-[2px] bg-[#FAFAFA] text-[#09090B] hover:bg-[#E4E4E7] disabled:bg-[#18181B] disabled:text-[#71717A] border border-transparent disabled:border-[#27272A] transition-colors flex items-center justify-center font-bold text-xs"
         >
-          <Send size={16} />
+          <Send size={14} />
         </button>
       </div>
     </div>

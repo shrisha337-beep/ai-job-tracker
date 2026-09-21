@@ -54,9 +54,9 @@ export function ApplicationCard({
       {...attributes}
       {...listeners}
       onClick={() => onClick?.(application)}
-      className={`card-interactive group relative select-none cursor-pointer transition-all duration-200 ${
+      className={`card-interactive group relative select-none cursor-pointer transition-colors duration-150 ${
         isDragging || isSortDragging
-          ? "opacity-50 rotate-1 scale-105 shadow-2xl"
+          ? "opacity-50 border-[#FAFAFA]"
           : ""
       }`}
     >

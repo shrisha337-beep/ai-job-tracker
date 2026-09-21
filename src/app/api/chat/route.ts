@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
           assistantResponseText = "Your job tracking pipeline is currently empty! Try adding some job applications first by clicking **\"Add Application\"** on the dashboard.";
         } else {
           const appList = apps
-            .map((app) => `- **${app.company}** — *${app.role}* (${app.status.toLowerCase()})`)
+            .map((app) => `- **${app.company}** : *${app.role}* (${app.status.toLowerCase()})`)
             .join("\n");
           assistantResponseText = `Here are your 5 most recent job applications:\n\n${appList}\n\nAsk me to move any of them (e.g. *"Move Google to Interview"*) and I'll handle it!`;
         }

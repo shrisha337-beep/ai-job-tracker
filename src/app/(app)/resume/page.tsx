@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { FileText, Upload, CheckCircle2, AlertCircle, Cpu } from "lucide-react";
 
 interface Resume {
   id: string;
@@ -68,7 +69,7 @@ export default function ResumePage() {
       }
       
       if (!res.ok) throw new Error(errorMsg);
-      setUploadSuccess(`✅ "${file.name}" uploaded successfully!`);
+      setUploadSuccess(`"${file.name}" uploaded and parsed successfully.`);
       await loadResumes();
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
@@ -90,21 +91,21 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Resume</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-          Upload your resume to enable AI match scoring across all applications
+      <div className="border-b border-[#27272A] pb-4">
+        <h1 className="text-xl font-bold tracking-tight text-[#FAFAFA] uppercase">Resume Management</h1>
+        <p className="text-xs font-mono text-[#A1A1AA] mt-1">
+          Upload active candidate documents for automated JD requirement matching
         </p>
       </div>
 
       {/* Upload zone */}
       <div
-        className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 cursor-pointer ${
+        className={`relative border border-dashed rounded-[2px] p-12 text-center transition-colors cursor-pointer bg-[#111114] ${
           dragOver
-            ? "border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
-            : "border-[var(--color-border)] hover:border-[var(--color-surface-4)] hover:bg-[var(--color-surface-1)]"
+            ? "border-[#FAFAFA] bg-[#18181B]"
+            : "border-[#27272A] hover:border-[#3F3F46]"
         }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
@@ -121,96 +122,104 @@ export default function ResumePage() {
         />
         {uploading ? (
           <div className="flex flex-col items-center gap-3">
-            <div className="loading-spinner" style={{ width: 40, height: 40, borderWidth: 3 }} />
-            <p className="text-sm text-[var(--color-muted-foreground)]">Uploading and parsing resume...</p>
+            <div className="loading-spinner" style={{ width: 32, height: 32, borderWidth: 2 }} />
+            <p className="text-xs font-mono text-[#A1A1AA]">Parsing resume structure and skills...</p>
           </div>
         ) : (
           <>
-            <div className="text-5xl mb-4">📄</div>
-            <h3 className="text-base font-semibold text-[var(--color-foreground)] mb-1">
-              Drop your resume here
+            <div className="w-10 h-10 border border-[#27272A] bg-[#18181B] flex items-center justify-center mx-auto mb-3 text-[#FAFAFA]">
+              <Upload size={18} />
+            </div>
+            <h3 className="text-sm font-bold text-[#FAFAFA] uppercase tracking-wide mb-1">
+              Drop Resume Document Here
             </h3>
-            <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
-              Supports PDF, TXT · Max 5MB
+            <p className="text-xs font-mono text-[#71717A] mb-4">
+              Supported Formats: PDF, TXT : Maximum Size: 5MB
             </p>
-            <button className="btn-primary" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-              Browse File
+            <button
+              className="btn-primary text-xs px-4 py-2"
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            >
+              Select File
             </button>
-            <p className="text-xs text-[var(--color-muted)] mt-3">
-              💡 Tip: PDF resumes are fully supported and parsed automatically!
+            <p className="text-[11px] font-mono text-[#71717A] mt-4">
+              Note: PDF files are extracted locally and parsed for technical competencies.
             </p>
           </>
         )}
       </div>
 
       {uploadError && (
-        <div className="p-4 rounded-xl bg-[var(--color-danger-muted)] border border-[rgba(244,63,94,0.2)] text-sm text-[var(--color-danger)]">
-          {uploadError}
+        <div className="p-3 border border-[#EF4444]/30 bg-[#EF4444]/10 text-xs font-mono text-[#F87171] flex items-center gap-2">
+          <AlertCircle size={14} />
+          <span>{uploadError}</span>
         </div>
       )}
       {uploadSuccess && (
-        <div className="p-4 rounded-xl bg-[var(--color-success-muted)] border border-[rgba(16,185,129,0.2)] text-sm text-[var(--color-success)]">
-          {uploadSuccess}
+        <div className="p-3 border border-[#10B981]/30 bg-[#10B981]/10 text-xs font-mono text-[#34D399] flex items-center gap-2">
+          <CheckCircle2 size={14} />
+          <span>{uploadSuccess}</span>
         </div>
       )}
 
       {/* Active resume */}
       {activeResume && (
-        <div className="card-gradient">
-          <div className="flex items-start justify-between mb-4">
+        <div className="border border-[#27272A] bg-[#111114] p-5">
+          <div className="flex items-start justify-between mb-4 border-b border-[#27272A] pb-3">
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[var(--color-foreground)]">
-                  {activeResume.filename}
-                </h2>
-                <span className="badge badge-success text-xs">Active</span>
-              </div>
-              <p className="text-xs text-[var(--color-muted)] mt-1">
-                Uploaded {new Date(activeResume.createdAt).toLocaleDateString()}
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#A1A1AA] block mb-1">
+                Active Benchmark Resume
+              </span>
+              <h2 className="text-sm font-bold text-[#FAFAFA]">{activeResume.filename}</h2>
+              <p className="text-[11px] font-mono text-[#71717A] mt-0.5">
+                Uploaded: {new Date(activeResume.createdAt).toLocaleDateString()}
               </p>
             </div>
-            <div className="text-3xl">✅</div>
+            <span className="badge badge-success text-[10px]">
+              Active Benchmark
+            </span>
           </div>
 
-          {activeResume.parsedSkills.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-[var(--color-muted-foreground)] mb-2">
-                Detected Skills ({activeResume.parsedSkills.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {activeResume.parsedSkills.map((skill) => (
-                  <span key={skill} className="badge badge-primary text-xs">
-                    {skill}
-                  </span>
-                ))}
-              </div>
+          <div>
+            <h3 className="text-xs font-mono uppercase text-[#A1A1AA] mb-2">
+              Detected Skills ({activeResume.parsedSkills.length})
+            </h3>
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+              {activeResume.parsedSkills.map((skill, i) => (
+                <span
+                  key={i}
+                  className="px-2 py-0.5 bg-[#18181B] border border-[#27272A] text-[11px] font-mono text-[#FAFAFA]"
+                >
+                  {skill}
+                </span>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* Resume history */}
+      {/* Previous resumes */}
       {resumes.length > 1 && (
-        <div className="card">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4">
-            Previous Resumes
-          </h2>
+        <div className="border border-[#27272A] bg-[#111114] p-5">
+          <h3 className="text-xs font-mono uppercase text-[#A1A1AA] mb-3">
+            Document Archive
+          </h3>
           <div className="space-y-2">
-            {resumes.filter((r) => !r.isActive).map((r) => (
+            {resumes.filter((r) => r.id !== activeResume?.id).map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]"
+                className="flex items-center justify-between p-3 bg-[#18181B] border border-[#27272A]"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">📄</span>
+                  <FileText size={16} className="text-[#A1A1AA]" />
                   <div>
-                    <p className="text-sm font-medium text-[var(--color-foreground)]">{r.filename}</p>
-                    <p className="text-xs text-[var(--color-muted)]">
-                      {new Date(r.createdAt).toLocaleDateString()} · {r.parsedSkills.length} skills detected
+                    <p className="text-xs font-semibold text-[#FAFAFA]">{r.filename}</p>
+                    <p className="text-[11px] font-mono text-[#71717A]">
+                      {new Date(r.createdAt).toLocaleDateString()} : {r.parsedSkills.length} skills indexed
                     </p>
                   </div>
                 </div>
-                <span className="badge badge-muted text-xs">Inactive</span>
+                <span className="badge badge-muted text-[10px]">Archived</span>
               </div>
             ))}
           </div>
@@ -219,30 +228,31 @@ export default function ResumePage() {
 
       {/* Empty state if no resumes yet */}
       {loaded && resumes.length === 0 && !uploading && (
-        <div className="card text-center py-8">
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            No resume uploaded yet. Upload one above to start AI matching.
+        <div className="border border-[#27272A] bg-[#111114] text-center py-8 p-6">
+          <p className="text-xs font-mono text-[#A1A1AA]">
+            No resume uploaded yet. Upload a candidate document to initialize qualification matching.
           </p>
         </div>
       )}
 
       {/* How it works */}
-      <div className="card">
-        <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4">
-          🤖 How AI Matching Works
+      <div className="border border-[#27272A] bg-[#111114] p-5">
+        <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4 flex items-center gap-2">
+          <Cpu size={14} className="text-[#FAFAFA]" />
+          Requirement Comparison Architecture
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { step: "1", title: "Upload Resume", desc: "We extract your skills, experience, and keywords" },
-            { step: "2", title: "Add a Job", desc: "Paste the JD when adding an application" },
-            { step: "3", title: "Get Match Score", desc: "AI scores your fit and identifies gaps instantly" },
+            { step: "01", title: "Document Ingestion", desc: "Extract candidate competencies, technical skills, and experience keywords." },
+            { step: "02", title: "Job Spec Extraction", desc: "Parse raw job postings into structured skill requirements and salary benchmarks." },
+            { step: "03", title: "Gap Calculation", desc: "Compute match percentage and highlight qualification discrepancies directly on the card." },
           ].map((item) => (
-            <div key={item.step} className="text-center p-4 rounded-xl bg-[var(--color-surface-2)]">
-              <div className="w-8 h-8 rounded-full bg-[var(--color-primary-muted)] text-[var(--color-primary)] text-sm font-bold flex items-center justify-center mx-auto mb-3">
-                {item.step}
+            <div key={item.step} className="p-4 bg-[#18181B] border border-[#27272A]">
+              <div className="text-xs font-mono font-bold text-[#FAFAFA] mb-2 border-b border-[#27272A] pb-1">
+                STAGE {item.step}
               </div>
-              <p className="text-sm font-semibold text-[var(--color-foreground)] mb-1">{item.title}</p>
-              <p className="text-xs text-[var(--color-muted)]">{item.desc}</p>
+              <p className="text-xs font-bold uppercase text-[#FAFAFA] mb-1">{item.title}</p>
+              <p className="text-[11px] font-mono text-[#71717A] leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>

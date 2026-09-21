@@ -338,7 +338,7 @@ export function ApplicationDetailModal({
             >
               {tab.label}
               {tab.badge && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-[2px] font-bold uppercase tracking-wider ${
                   tab.id === "match" 
                     ? application.matchScore && application.matchScore >= 75 ? "bg-[var(--color-success-muted)] text-[var(--color-success)]" : "bg-[var(--color-warning-muted)] text-[var(--color-warning)]"
                     : "bg-[var(--color-primary-muted)] text-[var(--color-primary)]"
@@ -531,7 +531,7 @@ export function ApplicationDetailModal({
                         className="btn-primary text-xs py-1 px-3 h-auto flex items-center gap-1.5"
                       >
                         <Sparkles className="w-3 h-3" />
-                        {isParsingJd ? "Parsing..." : "Parse with AI"}
+                        {isParsingJd ? "Extracting..." : "Extract Requirements"}
                       </button>
                     )}
                   </div>
@@ -725,8 +725,8 @@ export function ApplicationDetailModal({
                 <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
                   
                   {/* Score circle & grade */}
-                  <div className="card flex items-center gap-6 bg-gradient-to-r from-[var(--color-surface-2)] to-[var(--color-surface-1)]">
-                    <div className={`w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center shrink-0 ${getScoreColor(application.matchScore)}`}>
+                  <div className="card flex items-center gap-6 bg-[#18181B] border border-[#27272A]">
+                    <div className={`w-20 h-20 rounded-[2px] border-2 flex flex-col items-center justify-center shrink-0 ${getScoreColor(application.matchScore)}`}>
                       <span className="text-2xl font-black">{application.matchScore}%</span>
                       <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Score</span>
                     </div>
@@ -734,7 +734,7 @@ export function ApplicationDetailModal({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-[var(--color-foreground)]">Match Grade: {matchAnalysis?.grade || "N/A"}</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-surface-3)] text-[var(--color-foreground)]">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-[2px] bg-[var(--color-surface-3)] text-[var(--color-foreground)]">
                           Likelihood: {matchAnalysis?.interview_likelihood || "Medium"}
                         </span>
                       </div>

@@ -187,7 +187,7 @@ export function AddApplicationModal({ onClose, onAdd }: AddApplicationModalProps
             <div className="field-group">
               <label className="label" htmlFor="jdRaw">
                 Job Description{" "}
-                <span className="text-[var(--color-muted)]">(optional — paste to enable AI parsing)</span>
+                <span className="text-[var(--color-muted)]">(optional: paste to enable automated extraction)</span>
               </label>
               <textarea
                 id="jdRaw"

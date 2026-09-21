@@ -1,8 +1,21 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-import type { Application } from "@/types/application";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+import {
+  ClipboardList,
+  Target,
+  Trophy,
+  TrendingUp,
+  Percent,
+  XCircle,
+  Kanban,
+  Clock,
+  Plus,
+  FileText,
+  FileCheck,
+  ArrowRight,
+} from "lucide-react";
 
 interface DashboardStats {
   total: number;
@@ -12,45 +25,74 @@ interface DashboardStats {
   interview: number;
   offer: number;
   rejected: number;
-  avgMatchScore: number | null;
   responseRate: number | null;
+  avgMatchScore: number | null;
+}
+
+interface RecentApp {
+  id: string;
+  company: string;
+  role: string;
+  status: "BOOKMARKED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED";
+  createdAt: string;
+  matchScore: number | null;
 }
 
 interface DashboardClientProps {
   stats: DashboardStats;
-  recentApps: Application[];
+  recentApps: RecentApp[];
   userName: string;
 }
 
 const STATUS_CONFIG = {
-  BOOKMARKED: { label: "Bookmarked", color: "var(--color-status-bookmarked)", bg: "var(--color-status-bookmarked-bg)" },
-  APPLIED: { label: "Applied", color: "var(--color-status-applied)", bg: "var(--color-status-applied-bg)" },
-  SCREENING: { label: "Screening", color: "var(--color-status-screening)", bg: "var(--color-status-screening-bg)" },
-  INTERVIEW: { label: "Interview", color: "var(--color-status-interview)", bg: "var(--color-status-interview-bg)" },
-  OFFER: { label: "Offer", color: "var(--color-status-offer)", bg: "var(--color-status-offer-bg)" },
-  REJECTED: { label: "Rejected", color: "var(--color-status-rejected)", bg: "var(--color-status-rejected-bg)" },
+  BOOKMARKED: { label: "Bookmarked", color: "#A1A1AA", bg: "rgba(113, 113, 122, 0.12)" },
+  APPLIED: { label: "Applied", color: "#60A5FA", bg: "rgba(59, 130, 246, 0.12)" },
+  SCREENING: { label: "Screening", color: "#22D3EE", bg: "rgba(6, 182, 212, 0.12)" },
+  INTERVIEW: { label: "Interview", color: "#FBBF24", bg: "rgba(245, 158, 11, 0.12)" },
+  OFFER: { label: "Offer", color: "#34D399", bg: "rgba(16, 185, 129, 0.12)" },
+  REJECTED: { label: "Rejected", color: "#F87171", bg: "rgba(239, 68, 68, 0.12)" },
 };
 
 export function DashboardClient({ stats, recentApps, userName }: DashboardClientProps) {
   const firstName = userName.split(" ")[0];
 
   const statCards = [
-    { label: "Total Applications", value: stats.total, icon: "📋", color: "var(--color-primary)" },
-    { label: "Interviews", value: stats.interview, icon: "🎯", color: "var(--color-status-interview)" },
-    { label: "Offers", value: stats.offer, icon: "🎉", color: "var(--color-status-offer)" },
+    {
+      label: "Total Applications",
+      value: stats.total,
+      icon: <ClipboardList size={18} className="text-[#FAFAFA]" />,
+      color: "#FAFAFA",
+    },
+    {
+      label: "Interviews",
+      value: stats.interview,
+      icon: <Target size={18} className="text-[#FBBF24]" />,
+      color: "#FBBF24",
+    },
+    {
+      label: "Offers",
+      value: stats.offer,
+      icon: <Trophy size={18} className="text-[#34D399]" />,
+      color: "#34D399",
+    },
     {
       label: "Response Rate",
-      value: stats.responseRate !== null ? `${stats.responseRate}%` : "—",
-      icon: "📈",
-      color: "var(--color-primary)",
+      value: stats.responseRate !== null ? `${stats.responseRate}%` : "N/A",
+      icon: <TrendingUp size={18} className="text-[#60A5FA]" />,
+      color: "#60A5FA",
     },
     {
       label: "Avg Match Score",
-      value: stats.avgMatchScore !== null ? `${stats.avgMatchScore}%` : "—",
-      icon: "⚡",
-      color: "var(--color-status-screening)",
+      value: stats.avgMatchScore !== null ? `${stats.avgMatchScore}%` : "N/A",
+      icon: <Percent size={18} className="text-[#22D3EE]" />,
+      color: "#22D3EE",
     },
-    { label: "Rejected", value: stats.rejected, icon: "❌", color: "var(--color-status-rejected)" },
+    {
+      label: "Rejected",
+      value: stats.rejected,
+      icon: <XCircle size={18} className="text-[#F87171]" />,
+      color: "#F87171",
+    },
   ];
 
   const pipeline = [
@@ -64,32 +106,30 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
   const maxPipeline = Math.max(...pipeline.map((p) => p.count), 1);
 
   return (
-    <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-          Good {getTimeOfDay()}, {firstName} 👋
+      <div className="border-b border-[#27272A] pb-4">
+        <h1 className="text-xl font-bold tracking-tight text-[#FAFAFA] uppercase">
+          Workspace : {firstName}
         </h1>
-        <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-          Here&apos;s your job search at a glance
+        <p className="text-xs font-mono text-[#A1A1AA] mt-1">
+          Good {getTimeOfDay()} : Operational overview of active pipeline
         </p>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 stagger">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className="card-gradient animate-[slideUp_0.4s_ease-out_both]">
-            <div className="flex items-start justify-between mb-3">
-              <span className="text-2xl">{card.icon}</span>
+          <div key={card.label} className="border border-[#27272A] bg-[#111114] p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-mono text-[#A1A1AA] uppercase">{card.label}</span>
+              <div className="p-1.5 border border-[#27272A] bg-[#18181B]">{card.icon}</div>
             </div>
             <div
-              className="text-3xl font-bold mb-1"
+              className="text-2xl font-bold tracking-tight mt-1"
               style={{ color: card.color }}
             >
               {card.value}
-            </div>
-            <div className="text-xs text-[var(--color-muted-foreground)]">
-              {card.label}
             </div>
           </div>
         ))}
@@ -97,15 +137,15 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pipeline funnel */}
-        <div className="card">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4 flex items-center gap-2">
-            <span>🔄</span> Pipeline Overview
+        <div className="border border-[#27272A] bg-[#111114] p-5">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4 flex items-center gap-2">
+            <Kanban size={14} className="text-[#FAFAFA]" /> Pipeline Distribution
           </h2>
           {stats.total === 0 ? (
-            <div className="empty-state py-8">
-              <p className="text-sm">No applications yet</p>
-              <Link href="/applications" className="btn-primary mt-3 text-sm">
-                Add your first
+            <div className="py-8 text-center border border-dashed border-[#27272A] p-6">
+              <p className="text-xs text-[#A1A1AA] font-mono">No active submissions logged in pipeline</p>
+              <Link href="/applications" className="btn-primary mt-4 text-xs">
+                Add First Application
               </Link>
             </div>
           ) : (
@@ -115,18 +155,18 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
                 const pct = Math.round((count / maxPipeline) * 100);
                 return (
                   <div key={key}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-medium" style={{ color: config.color }}>
+                    <div className="flex justify-between items-center mb-1 text-xs font-mono">
+                      <span className="font-semibold uppercase" style={{ color: config.color }}>
                         {config.label}
                       </span>
-                      <span className="text-xs text-[var(--color-muted)]">{count}</span>
+                      <span className="text-[#A1A1AA]">{count}</span>
                     </div>
-                    <div className="progress-bar">
+                    <div className="w-full h-1.5 bg-[#18181B] border border-[#27272A]">
                       <div
-                        className="progress-bar-fill"
+                        className="h-full transition-all duration-300"
                         style={{
                           width: `${pct}%`,
-                          background: `linear-gradient(90deg, ${config.color}, ${config.color}aa)`,
+                          background: config.color,
                         }}
                       />
                     </div>
@@ -138,85 +178,88 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
         </div>
 
         {/* Recent activity */}
-        <div className="card">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4 flex items-center gap-2">
-            <span>⏱</span> Recent Activity
-          </h2>
-          {recentApps.length === 0 ? (
-            <div className="empty-state py-8">
-              <p className="text-sm">No recent activity</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {recentApps.map((app) => {
-                const config = STATUS_CONFIG[app.status];
-                return (
-                  <div
-                    key={app.id}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors group cursor-default"
-                  >
+        <div className="border border-[#27272A] bg-[#111114] p-5 flex flex-col justify-between">
+          <div>
+            <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4 flex items-center gap-2">
+              <Clock size={14} className="text-[#FAFAFA]" /> Recent Updates
+            </h2>
+            {recentApps.length === 0 ? (
+              <div className="py-8 text-center border border-dashed border-[#27272A] p-6">
+                <p className="text-xs text-[#A1A1AA] font-mono">No recent activity detected</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentApps.map((app) => {
+                  const config = STATUS_CONFIG[app.status];
+                  return (
                     <div
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: config.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
-                        {app.role}
-                      </p>
-                      <p className="text-xs text-[var(--color-muted)] truncate">
-                        {app.company}
-                      </p>
+                      key={app.id}
+                      className="flex items-center gap-3 p-2.5 border border-[#27272A] bg-[#18181B] hover:border-[#3F3F46] transition-colors"
+                    >
+                      <div
+                        className="w-1.5 h-1.5 shrink-0"
+                        style={{ background: config.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-[#FAFAFA] truncate">
+                          {app.role}
+                        </p>
+                        <p className="text-[11px] text-[#A1A1AA] truncate">
+                          {app.company}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span
+                          className="badge text-[10px]"
+                          style={{ background: config.bg, color: config.color, borderColor: config.color }}
+                        >
+                          {config.label}
+                        </span>
+                        <span className="text-[10px] font-mono text-[#71717A]">
+                          {formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span
-                        className="badge text-xs"
-                        style={{ background: config.bg, color: config.color }}
-                      >
-                        {config.label}
-                      </span>
-                      <span className="text-xs text-[var(--color-muted)]">
-                        {formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
           {recentApps.length > 0 && (
             <Link
               href="/applications"
-              className="mt-3 text-xs text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors flex items-center gap-1"
+              className="mt-4 text-xs font-mono text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors inline-flex items-center gap-1.5 pt-2 border-t border-[#27272A]"
             >
-              View all applications →
+              View Full Pipeline
+              <ArrowRight size={12} />
             </Link>
           )}
         </div>
       </div>
 
       {/* Quick actions */}
-      <div className="card">
-        <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4">
-          ⚡ Quick Actions
+      <div className="border border-[#27272A] bg-[#111114] p-5">
+        <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4">
+          Direct Actions
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { href: "/applications", icon: "➕", label: "Add Application", desc: "Track a new role" },
-            { href: "/applications", icon: "📋", label: "View Kanban", desc: "See your pipeline" },
-            { href: "/resume", icon: "📄", label: "Upload Resume", desc: "Enable AI matching" },
-            { href: "/resume", icon: "🤖", label: "AI Match Score", desc: "Score your resume" },
+            { href: "/applications", icon: <Plus size={16} />, label: "Add Application", desc: "Log a new role" },
+            { href: "/applications", icon: <Kanban size={16} />, label: "Kanban Board", desc: "Pipeline overview" },
+            { href: "/resume", icon: <FileText size={16} />, label: "Upload Resume", desc: "PDF text parser" },
+            { href: "/resume", icon: <FileCheck size={16} />, label: "Match Evaluation", desc: "Skill gap analysis" },
           ].map((action) => (
             <Link
               key={action.label}
               href={action.href}
-              className="card-interactive flex flex-col gap-2 p-4"
+              className="p-3.5 border border-[#27272A] bg-[#18181B] hover:border-[#FAFAFA] transition-colors flex flex-col gap-2"
             >
-              <span className="text-2xl">{action.icon}</span>
+              <div className="text-[#FAFAFA]">{action.icon}</div>
               <div>
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#FAFAFA]">
                   {action.label}
                 </p>
-                <p className="text-xs text-[var(--color-muted)]">{action.desc}</p>
+                <p className="text-[11px] font-mono text-[#71717A] mt-0.5">{action.desc}</p>
               </div>
             </Link>
           ))}

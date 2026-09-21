@@ -2,14 +2,19 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "JobTracker AI",
-    short_name: "JobTracker",
-    description: "AI-Powered Job Application Tracking Platform",
+    name: "Job Tracker",
+    short_name: "Job Tracker",
+    description: "Structured job application pipeline and resume match analysis",
     start_url: "/",
     display: "standalone",
-    background_color: "#0a0a0f",
-    theme_color: "#6366f1",
+    background_color: "#09090b",
+    theme_color: "#09090b",
     icons: [
+      {
+        src: "/icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+      },
       {
         src: "/icon-192.png",
         sizes: "192x192",

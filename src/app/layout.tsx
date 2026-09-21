@@ -13,26 +13,38 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://jobtracker.dev";
+
 export const metadata: Metadata = {
-  title: "JobTracker AI — AI-Powered Job Application Tracker",
+  metadataBase: new URL(siteUrl),
+  title: "Job Tracker | Structured Application Pipeline",
   description:
-    "Track job applications, parse JDs with AI, match your resume, and land more interviews. Free and open-source.",
+    "Structured kanban pipeline for job applications, automated job description extraction, and resume match scoring.",
   keywords: [
     "job tracker",
     "application tracker",
     "resume matcher",
-    "AI job search",
-    "kanban board",
+    "kanban pipeline",
+    "job application management",
   ],
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
+    apple: "/icon.svg",
+  },
   openGraph: {
-    title: "JobTracker AI — AI-Powered Job Application Tracker",
+    title: "Job Tracker | Structured Application Pipeline",
     description:
-      "Track job applications, parse JDs with AI, match your resume, and land more interviews.",
+      "Structured kanban pipeline for job applications, automated job description extraction, and resume match scoring.",
+    url: siteUrl,
+    siteName: "Job Tracker",
     type: "website",
   },
   appleWebApp: {
     capable: true,
-    title: "JobTracker AI",
+    title: "Job Tracker",
     statusBarStyle: "black-translucent",
   },
 };

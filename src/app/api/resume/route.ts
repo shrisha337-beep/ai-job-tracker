@@ -6,7 +6,7 @@ import pdf from "pdf-parse";
 
 
 
-// POST /api/resume — upload and store resume text
+// POST /api/resume : upload and store resume text
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/resume — list user's resumes
+// GET /api/resume : list user's resumes
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {

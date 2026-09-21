@@ -84,15 +84,15 @@ export default function SettingsPage() {
           ))}
 
           {/* Quick Stats sidebar */}
-          <div className="card mt-6 space-y-3 bg-gradient-to-br from-[var(--color-surface-2)] to-transparent">
-            <h4 className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider">Usage Stats</h4>
+          <div className="card mt-6 space-y-3 bg-[#18181B] border border-[#27272A]">
+            <h4 className="text-xs font-bold text-[#FAFAFA] uppercase tracking-wider">Usage Stats</h4>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-[var(--color-muted)]">AI parses used</span>
+                <span className="text-[var(--color-muted)]">Description extractions</span>
                 <span className="font-semibold text-[var(--color-foreground)]">4 / 10</span>
               </div>
-              <div className="w-full bg-[var(--color-surface-3)] h-1.5 rounded-full overflow-hidden">
-                <div className="bg-[var(--color-primary)] h-full w-[40%]" />
+              <div className="w-full bg-[#27272A] h-1.5 rounded-[1px] overflow-hidden">
+                <div className="bg-[#FAFAFA] h-full w-[40%]" />
               </div>
               <div className="flex justify-between pt-1">
                 <span className="text-[var(--color-muted)]">Resumes uploaded</span>
@@ -141,12 +141,12 @@ export default function SettingsPage() {
                   <img
                     src={session.user.image}
                     alt="Profile Avatar"
-                    className="w-10 h-10 rounded-full border border-[var(--color-border)]"
+                    className="w-10 h-10 rounded-[2px] border border-[var(--color-border)]"
                   />
                 )}
                 <div>
-                  <p className="text-xs font-semibold text-[var(--color-foreground)]">Connected with Google</p>
-                  <p className="text-[10px] text-[var(--color-muted)]">Your profile photo is synced from Google OAuth</p>
+                  <p className="text-xs font-semibold text-[var(--color-foreground)]">Connected Account</p>
+                  <p className="text-[10px] text-[var(--color-muted)]">Profile photo synced via authenticated provider</p>
                 </div>
               </div>
 
@@ -165,14 +165,14 @@ export default function SettingsPage() {
               Plans & Billing
             </h3>
 
-            <div className="p-4 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-start justify-between flex-wrap gap-4">
+            <div className="p-4 rounded-[2px] bg-[#18181B] border border-[var(--color-border)] flex items-start justify-between flex-wrap gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[var(--color-foreground)]">Free Hackathon Tier</span>
+                  <span className="text-sm font-bold text-[var(--color-foreground)]">Standard Tier</span>
                   <span className="badge badge-primary text-[9px] uppercase tracking-wider px-1.5 font-bold">Active</span>
                 </div>
                 <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                  Basic access to track up to 50 applications, 10 AI description parses, and 3 resume analysis cycles per month.
+                  Active access to track up to 50 applications, 10 job description parses, and 3 resume evaluation cycles per month.
                 </p>
               </div>
               <div className="text-right">
@@ -183,12 +183,12 @@ export default function SettingsPage() {
 
             <div className="flex justify-between items-center pt-2">
               <p className="text-xs text-[var(--color-muted-foreground)]">
-                Upgrade to unlock unlimited AI resumes comparison and custom tracking pipelines.
+                Upgrade to unlock unlimited application tracking and resume comparison.
               </p>
               <button
                 onClick={handleUpgrade}
                 disabled={isSubmitting}
-                className="btn-primary text-xs py-2 px-4 h-auto shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-[var(--color-primary)] to-indigo-500 hover:shadow-lg hover:shadow-indigo-500/10"
+                className="btn-primary text-xs py-2 px-4 h-auto shrink-0 flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 {isSubmitting ? "Processing..." : "Upgrade to Pro"}
@@ -204,10 +204,10 @@ export default function SettingsPage() {
             </h3>
             
             <form onSubmit={handleSaveApiSettings} className="space-y-4">
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                <Sparkles className="w-5 h-5 text-[var(--color-primary)] shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3.5 rounded-[2px] bg-[#18181B] border border-[#27272A] text-xs text-[var(--color-muted-foreground)] leading-relaxed">
+                <Sparkles className="w-4 h-4 text-[#FAFAFA] shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold text-[var(--color-foreground)]">Demo API Key Pre-configured:</span> Antigravity has configured a global OpenAI API key for this hackathon submission, allowing you to use all AI features immediately without costs.
+                  <span className="font-semibold text-[var(--color-foreground)]">API Key Pre-configured:</span> A global OpenAI API key is configured in the environment, allowing you to use requirement extraction immediately.
                 </div>
               </div>
 
@@ -251,7 +251,7 @@ export default function SettingsPage() {
           {/* Notifications Card */}
           <div id="notifications" className="card space-y-4 scroll-mt-6">
             <h3 className="text-base font-semibold text-[var(--color-foreground)] flex items-center gap-2 border-b border-[var(--color-border)] pb-3">
-              <Bell className="w-4 h-4 text-purple-400" />
+              <Bell className="w-4 h-4 text-[#FAFAFA]" />
               Notifications
             </h3>
 
@@ -297,20 +297,20 @@ export default function SettingsPage() {
           <div className="overlay z-[90] animate-[fadeIn_0.15s_ease-out]" onClick={() => setShowUpgradeModal(false)} />
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="dialog w-full max-w-md animate-[scale-in_0.2s_cubic-bezier(0.16,1,0.3,1)] p-6 text-center space-y-5">
-              <div className="w-16 h-16 rounded-full bg-[var(--color-success-muted)] text-[var(--color-success)] flex items-center justify-center mx-auto text-3xl">
-                <Check className="w-8 h-8" />
+              <div className="w-12 h-12 rounded-[2px] bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981] flex items-center justify-center mx-auto text-xl">
+                <Check className="w-6 h-6" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-[var(--color-foreground)]">Successfully Upgraded to Pro!</h2>
+                <h2 className="text-lg font-bold text-[var(--color-foreground)] uppercase">Upgraded to Pro</h2>
                 <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                  Welcome to <strong>AI Job Tracker Pro</strong>! You now have unlimited job description parsing, active resume match scores, and automated interview scheduling.
+                  Welcome to <strong>Job Tracker Pro</strong>. You now have unlimited job description parsing, active resume match scores, and automated stage tracking.
                 </p>
               </div>
               <button
                 onClick={() => setShowUpgradeModal(false)}
-                className="btn-primary w-full text-xs py-2.5"
+                className="btn-primary w-full text-xs py-2"
               >
-                Let's get tracking
+                Continue to Workspace
               </button>
             </div>
           </div>
