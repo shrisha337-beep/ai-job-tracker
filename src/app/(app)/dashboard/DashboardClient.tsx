@@ -7,8 +7,6 @@ import {
   Target,
   Trophy,
   TrendingUp,
-  Percent,
-  XCircle,
   Kanban,
   Clock,
   Plus,
@@ -45,53 +43,42 @@ interface DashboardClientProps {
 }
 
 const STATUS_CONFIG = {
-  BOOKMARKED: { label: "Bookmarked", color: "#A1A1AA", bg: "rgba(113, 113, 122, 0.12)" },
-  APPLIED: { label: "Applied", color: "#60A5FA", bg: "rgba(59, 130, 246, 0.12)" },
-  SCREENING: { label: "Screening", color: "#22D3EE", bg: "rgba(6, 182, 212, 0.12)" },
-  INTERVIEW: { label: "Interview", color: "#FBBF24", bg: "rgba(245, 158, 11, 0.12)" },
-  OFFER: { label: "Offer", color: "#34D399", bg: "rgba(16, 185, 129, 0.12)" },
-  REJECTED: { label: "Rejected", color: "#F87171", bg: "rgba(239, 68, 68, 0.12)" },
+  BOOKMARKED: { label: "Bookmarked", color: "#A1A1AA", badgeClass: "badge-bookmarked" },
+  APPLIED: { label: "Applied", color: "#60A5FA", badgeClass: "badge-applied" },
+  SCREENING: { label: "Screening", color: "#22D3EE", badgeClass: "badge-screening" },
+  INTERVIEW: { label: "Interview", color: "#FBBF24", badgeClass: "badge-interview" },
+  OFFER: { label: "Offer", color: "#34D399", badgeClass: "badge-offer" },
+  REJECTED: { label: "Rejected", color: "#F87171", badgeClass: "badge-rejected" },
 };
 
 export function DashboardClient({ stats, recentApps, userName }: DashboardClientProps) {
   const firstName = userName.split(" ")[0];
 
+  // Exactly 4 stat cards per implementation plan
   const statCards = [
     {
       label: "Total Applications",
       value: stats.total,
-      icon: <ClipboardList size={18} className="text-[#FAFAFA]" />,
-      color: "#FAFAFA",
+      icon: <ClipboardList size={18} className="text-[var(--color-foreground)]" />,
+      colorClass: "text-[var(--color-foreground)]",
     },
     {
       label: "Interviews",
       value: stats.interview,
-      icon: <Target size={18} className="text-[#FBBF24]" />,
-      color: "#FBBF24",
+      icon: <Target size={18} className="text-amber-500" />,
+      colorClass: "text-amber-500",
     },
     {
       label: "Offers",
       value: stats.offer,
-      icon: <Trophy size={18} className="text-[#34D399]" />,
-      color: "#34D399",
+      icon: <Trophy size={18} className="text-emerald-500" />,
+      colorClass: "text-emerald-500",
     },
     {
       label: "Response Rate",
       value: stats.responseRate !== null ? `${stats.responseRate}%` : "N/A",
-      icon: <TrendingUp size={18} className="text-[#60A5FA]" />,
-      color: "#60A5FA",
-    },
-    {
-      label: "Avg Match Score",
-      value: stats.avgMatchScore !== null ? `${stats.avgMatchScore}%` : "N/A",
-      icon: <Percent size={18} className="text-[#22D3EE]" />,
-      color: "#22D3EE",
-    },
-    {
-      label: "Rejected",
-      value: stats.rejected,
-      icon: <XCircle size={18} className="text-[#F87171]" />,
-      color: "#F87171",
+      icon: <TrendingUp size={18} className="text-blue-500" />,
+      colorClass: "text-blue-500",
     },
   ];
 
@@ -106,64 +93,68 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
   const maxPipeline = Math.max(...pipeline.map((p) => p.count), 1);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="border-b border-[#27272A] pb-4">
-        <h1 className="text-xl font-bold tracking-tight text-[#FAFAFA] uppercase">
-          Workspace : {firstName}
+      <div className="border-b border-[var(--color-border)] pb-5">
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--color-foreground)]">
+          Welcome back, {firstName}
         </h1>
-        <p className="text-xs font-mono text-[#A1A1AA] mt-1">
-          Good {getTimeOfDay()} : Operational overview of active pipeline
+        <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
+          Good {getTimeOfDay()} — here's your pipeline overview
         </p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {/* 4 Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className="border border-[#27272A] bg-[#111114] p-4">
+          <div
+            key={card.label}
+            className="border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 rounded-[6px] shadow-xs"
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono text-[#A1A1AA] uppercase">{card.label}</span>
-              <div className="p-1.5 border border-[#27272A] bg-[#18181B]">{card.icon}</div>
+              <span className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                {card.label}
+              </span>
+              <div className="p-1.5 border border-[var(--color-border)] bg-[var(--color-surface-2)] rounded-[6px]">
+                {card.icon}
+              </div>
             </div>
-            <div
-              className="text-2xl font-bold tracking-tight mt-1"
-              style={{ color: card.color }}
-            >
+            <div className={`text-2xl font-bold tracking-tight mt-1 ${card.colorClass}`}>
               {card.value}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pipeline funnel */}
-        <div className="border border-[#27272A] bg-[#111114] p-5">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4 flex items-center gap-2">
-            <Kanban size={14} className="text-[#FAFAFA]" /> Pipeline Distribution
+        <div className="border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5 rounded-[6px]">
+          <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4 flex items-center gap-2">
+            <Kanban size={16} className="text-[var(--color-foreground)]" /> Pipeline Distribution
           </h2>
           {stats.total === 0 ? (
-            <div className="py-8 text-center border border-dashed border-[#27272A] p-6">
-              <p className="text-xs text-[#A1A1AA] font-mono">No active submissions logged in pipeline</p>
-              <Link href="/applications" className="btn-primary mt-4 text-xs">
+            <div className="py-8 text-center border border-dashed border-[var(--color-border)] rounded-[6px] p-6">
+              <p className="text-sm text-[var(--color-muted-foreground)]">No active applications in pipeline</p>
+              <Link href="/applications" className="btn-primary mt-4 text-xs inline-flex">
                 Add First Application
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {pipeline.map(({ key, count }) => {
                 const config = STATUS_CONFIG[key];
                 const pct = Math.round((count / maxPipeline) * 100);
                 return (
                   <div key={key}>
                     <div className="flex justify-between items-center mb-1 text-xs font-mono">
-                      <span className="font-semibold uppercase" style={{ color: config.color }}>
+                      <span className="font-medium" style={{ color: config.color }}>
                         {config.label}
                       </span>
-                      <span className="text-[#A1A1AA]">{count}</span>
+                      <span className="text-[var(--color-muted-foreground)]">{count}</span>
                     </div>
-                    <div className="w-full h-1.5 bg-[#18181B] border border-[#27272A]">
+                    <div className="w-full h-2 bg-[var(--color-surface-2)] rounded-[3px] overflow-hidden border border-[var(--color-border)]">
                       <div
-                        className="h-full transition-all duration-300"
+                        className="h-full transition-all duration-300 rounded-[3px]"
                         style={{
                           width: `${pct}%`,
                           background: config.color,
@@ -178,14 +169,14 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
         </div>
 
         {/* Recent activity */}
-        <div className="border border-[#27272A] bg-[#111114] p-5 flex flex-col justify-between">
+        <div className="border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5 rounded-[6px] flex flex-col justify-between">
           <div>
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4 flex items-center gap-2">
-              <Clock size={14} className="text-[#FAFAFA]" /> Recent Updates
+            <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4 flex items-center gap-2">
+              <Clock size={16} className="text-[var(--color-foreground)]" /> Recent Updates
             </h2>
             {recentApps.length === 0 ? (
-              <div className="py-8 text-center border border-dashed border-[#27272A] p-6">
-                <p className="text-xs text-[#A1A1AA] font-mono">No recent activity detected</p>
+              <div className="py-8 text-center border border-dashed border-[var(--color-border)] rounded-[6px] p-6">
+                <p className="text-sm text-[var(--color-muted-foreground)]">No recent activity detected</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -194,28 +185,25 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
                   return (
                     <div
                       key={app.id}
-                      className="flex items-center gap-3 p-2.5 border border-[#27272A] bg-[#18181B] hover:border-[#3F3F46] transition-colors"
+                      className="flex items-center gap-3 p-2.5 border border-[var(--color-border)] bg-[var(--color-surface-0)] rounded-[6px] hover:border-[var(--color-primary)] transition-colors"
                     >
                       <div
-                        className="w-1.5 h-1.5 shrink-0"
+                        className="w-2 h-2 rounded-[2px] shrink-0"
                         style={{ background: config.color }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[#FAFAFA] truncate">
+                        <p className="text-xs font-semibold text-[var(--color-foreground)] truncate">
                           {app.role}
                         </p>
-                        <p className="text-[11px] text-[#A1A1AA] truncate">
+                        <p className="text-[11px] text-[var(--color-muted-foreground)] truncate">
                           {app.company}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span
-                          className="badge text-[10px]"
-                          style={{ background: config.bg, color: config.color, borderColor: config.color }}
-                        >
+                        <span className={`badge text-[10px] ${config.badgeClass}`}>
                           {config.label}
                         </span>
-                        <span className="text-[10px] font-mono text-[#71717A]">
+                        <span className="text-[10px] font-mono text-[var(--color-muted)]">
                           {formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}
                         </span>
                       </div>
@@ -228,7 +216,7 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
           {recentApps.length > 0 && (
             <Link
               href="/applications"
-              className="mt-4 text-xs font-mono text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors inline-flex items-center gap-1.5 pt-2 border-t border-[#27272A]"
+              className="mt-4 text-xs font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-1.5 pt-2 border-t border-[var(--color-border)]"
             >
               View Full Pipeline
               <ArrowRight size={12} />
@@ -238,8 +226,8 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
       </div>
 
       {/* Quick actions */}
-      <div className="border border-[#27272A] bg-[#111114] p-5">
-        <h2 className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-4">
+      <div className="border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5 rounded-[6px]">
+        <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-4">
           Direct Actions
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -252,14 +240,14 @@ export function DashboardClient({ stats, recentApps, userName }: DashboardClient
             <Link
               key={action.label}
               href={action.href}
-              className="p-3.5 border border-[#27272A] bg-[#18181B] hover:border-[#FAFAFA] transition-colors flex flex-col gap-2"
+              className="p-3.5 border border-[var(--color-border)] bg-[var(--color-surface-0)] hover:border-[var(--color-primary)] rounded-[6px] transition-colors flex flex-col gap-2"
             >
-              <div className="text-[#FAFAFA]">{action.icon}</div>
+              <div className="text-[var(--color-foreground)]">{action.icon}</div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#FAFAFA]">
+                <p className="text-xs font-semibold text-[var(--color-foreground)]">
                   {action.label}
                 </p>
-                <p className="text-[11px] font-mono text-[#71717A] mt-0.5">{action.desc}</p>
+                <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">{action.desc}</p>
               </div>
             </Link>
           ))}

@@ -7,11 +7,9 @@ import {
   CreditCard, 
   Key, 
   Bell, 
-  Sparkles,
-  CheckCircle,
-  AlertCircle,
-  HelpCircle,
-  Check
+  Sparkles, 
+  CheckCircle, 
+  Check 
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -44,58 +42,58 @@ export default function SettingsPage() {
     setTimeout(() => {
       setIsSubmitting(false);
       setShowUpgradeModal(true);
-    }, 8000); // 800ms mock network request
+    }, 600);
   };
 
   return (
-    <div className="space-y-6 max-w-4xl animate-[fadeIn_0.3s_ease-out]">
+    <div className="space-y-8 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--color-foreground)]">Settings</h1>
         <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-          Manage your account settings, configurations, and SaaS preferences
+          Manage your account profile, preferences, and API configuration
         </p>
       </div>
 
       {successMsg && (
-        <div className="p-3 rounded-xl bg-[var(--color-success-muted)] border border-[rgba(16,185,129,0.2)] text-xs text-[var(--color-success)] flex items-center gap-2">
-          <CheckCircle className="w-4 h-4" />
+        <div className="p-3.5 rounded-[6px] bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         
         {/* Left Side: Navigation Links / Anchors */}
-        <div className="space-y-2 md:col-span-1">
+        <div className="space-y-3 md:col-span-1">
           {[
-            { id: "profile", label: "Profile Settings", icon: User },
-            { id: "billing", label: "Billing & Plans", icon: CreditCard },
+            { id: "profile", label: "Profile", icon: User },
+            { id: "billing", label: "Plan & Usage", icon: CreditCard },
             { id: "api", label: "API Configuration", icon: Key },
             { id: "notifications", label: "Notifications", icon: Bell },
           ].map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--color-surface-2)] text-sm text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors border border-transparent hover:border-[var(--color-border)] font-medium"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-[6px] hover:bg-[var(--color-surface-2)] text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors border border-transparent hover:border-[var(--color-border)] font-medium"
             >
               <item.icon className="w-4 h-4 shrink-0" />
               {item.label}
             </a>
           ))}
 
-          {/* Quick Stats sidebar */}
-          <div className="card mt-6 space-y-3 bg-[#18181B] border border-[#27272A]">
-            <h4 className="text-xs font-bold text-[#FAFAFA] uppercase tracking-wider">Usage Stats</h4>
-            <div className="space-y-2 text-xs">
+          {/* Usage Stats sidebar */}
+          <div className="card mt-6 space-y-3 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-4">
+            <h4 className="text-xs font-semibold text-[var(--color-foreground)] uppercase tracking-wider">Usage Stats</h4>
+            <div className="space-y-2.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-[var(--color-muted)]">Description extractions</span>
+                <span className="text-[var(--color-muted-foreground)]">Job description parses</span>
                 <span className="font-semibold text-[var(--color-foreground)]">4 / 10</span>
               </div>
-              <div className="w-full bg-[#27272A] h-1.5 rounded-[1px] overflow-hidden">
-                <div className="bg-[#FAFAFA] h-full w-[40%]" />
+              <div className="w-full bg-[var(--color-surface-2)] h-2 rounded-[3px] overflow-hidden border border-[var(--color-border)]">
+                <div className="bg-[var(--color-primary)] h-full w-[40%] rounded-[3px]" />
               </div>
               <div className="flex justify-between pt-1">
-                <span className="text-[var(--color-muted)]">Resumes uploaded</span>
+                <span className="text-[var(--color-muted-foreground)]">Resumes uploaded</span>
                 <span className="font-semibold text-[var(--color-foreground)]">1 / 3</span>
               </div>
             </div>
@@ -106,7 +104,7 @@ export default function SettingsPage() {
         <div className="space-y-6 md:col-span-2">
           
           {/* Profile Section */}
-          <div id="profile" className="card space-y-4 scroll-mt-6">
+          <div id="profile" className="card space-y-4 scroll-mt-6 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-5 shadow-xs">
             <h3 className="text-base font-semibold text-[var(--color-foreground)] flex items-center gap-2 border-b border-[var(--color-border)] pb-3">
               <User className="w-4 h-4 text-[var(--color-primary)]" />
               Profile Information
@@ -118,7 +116,7 @@ export default function SettingsPage() {
                   <label className="label">Display Name</label>
                   <input
                     type="text"
-                    className="input"
+                    className="input text-xs"
                     placeholder="Your Name"
                     value={displayName || session?.user?.name || ""}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -129,7 +127,7 @@ export default function SettingsPage() {
                   <label className="label">Email Address</label>
                   <input
                     type="email"
-                    className="input opacity-60 cursor-not-allowed"
+                    className="input text-xs opacity-60 cursor-not-allowed"
                     value={session?.user?.email || "you@example.com"}
                     disabled
                   />
@@ -141,12 +139,12 @@ export default function SettingsPage() {
                   <img
                     src={session.user.image}
                     alt="Profile Avatar"
-                    className="w-10 h-10 rounded-[2px] border border-[var(--color-border)]"
+                    className="w-10 h-10 rounded-[6px] border border-[var(--color-border)]"
                   />
                 )}
                 <div>
                   <p className="text-xs font-semibold text-[var(--color-foreground)]">Connected Account</p>
-                  <p className="text-[10px] text-[var(--color-muted)]">Profile photo synced via authenticated provider</p>
+                  <p className="text-[11px] text-[var(--color-muted-foreground)]">Profile photo synced via authenticated provider</p>
                 </div>
               </div>
 
@@ -159,29 +157,29 @@ export default function SettingsPage() {
           </div>
 
           {/* Billing / Plans Section */}
-          <div id="billing" className="card space-y-4 scroll-mt-6">
+          <div id="billing" className="card space-y-4 scroll-mt-6 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-5 shadow-xs">
             <h3 className="text-base font-semibold text-[var(--color-foreground)] flex items-center gap-2 border-b border-[var(--color-border)] pb-3">
-              <CreditCard className="w-4 h-4 text-[var(--color-success)]" />
+              <CreditCard className="w-4 h-4 text-[var(--color-primary)]" />
               Plans & Billing
             </h3>
 
-            <div className="p-4 rounded-[2px] bg-[#18181B] border border-[var(--color-border)] flex items-start justify-between flex-wrap gap-4">
+            <div className="p-4 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)] flex items-start justify-between flex-wrap gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[var(--color-foreground)]">Standard Tier</span>
-                  <span className="badge badge-primary text-[9px] uppercase tracking-wider px-1.5 font-bold">Active</span>
+                  <span className="text-sm font-semibold text-[var(--color-foreground)]">Standard Tier</span>
+                  <span className="badge badge-primary text-[9px] uppercase px-1.5 font-bold">Active</span>
                 </div>
                 <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                  Active access to track up to 50 applications, 10 job description parses, and 3 resume evaluation cycles per month.
+                  Track up to 50 applications, 10 job description parses, and 3 resume evaluation cycles per month.
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-xl font-black text-[var(--color-foreground)]">$0</span>
-                <span className="text-[10px] text-[var(--color-muted)] font-medium"> / month</span>
+                <span className="text-2xl font-bold text-[var(--color-foreground)]">$0</span>
+                <span className="text-xs text-[var(--color-muted-foreground)] font-medium"> / month</span>
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-2">
+            <div className="flex justify-between items-center pt-2 gap-4">
               <p className="text-xs text-[var(--color-muted-foreground)]">
                 Upgrade to unlock unlimited application tracking and resume comparison.
               </p>
@@ -197,17 +195,17 @@ export default function SettingsPage() {
           </div>
 
           {/* API Keys Configuration */}
-          <div id="api" className="card space-y-4 scroll-mt-6">
+          <div id="api" className="card space-y-4 scroll-mt-6 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-5 shadow-xs">
             <h3 className="text-base font-semibold text-[var(--color-foreground)] flex items-center gap-2 border-b border-[var(--color-border)] pb-3">
-              <Key className="w-4 h-4 text-[var(--color-warning)]" />
+              <Key className="w-4 h-4 text-amber-500" />
               API Settings
             </h3>
             
             <form onSubmit={handleSaveApiSettings} className="space-y-4">
-              <div className="flex items-start gap-3 p-3.5 rounded-[2px] bg-[#18181B] border border-[#27272A] text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                <Sparkles className="w-4 h-4 text-[#FAFAFA] shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3.5 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)] text-xs text-[var(--color-muted-foreground)] leading-relaxed">
+                <Sparkles className="w-4 h-4 text-[var(--color-primary)] shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold text-[var(--color-foreground)]">API Key Pre-configured:</span> A global OpenAI API key is configured in the environment, allowing you to use requirement extraction immediately.
+                  <span className="font-semibold text-[var(--color-foreground)]">API Key Pre-configured:</span> A default OpenAI key is configured in the environment for requirement extraction and parsing.
                 </div>
               </div>
 
@@ -217,15 +215,15 @@ export default function SettingsPage() {
                   id="useCustomKey"
                   checked={useCustomKey}
                   onChange={(e) => setUseCustomKey(e.target.checked)}
-                  className="rounded border-[var(--color-border)] bg-[var(--color-surface-3)] focus:ring-[var(--color-primary)]"
+                  className="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
-                <label htmlFor="useCustomKey" className="text-xs font-semibold text-[var(--color-foreground)] cursor-pointer">
-                  Configure custom OpenAI API Key (Overwrites default)
+                <label htmlFor="useCustomKey" className="text-xs font-medium text-[var(--color-foreground)] cursor-pointer">
+                  Use custom OpenAI API Key (overrides default)
                 </label>
               </div>
 
               {useCustomKey && (
-                <div className="field-group animate-[fadeIn_0.2s_ease-out]">
+                <div className="field-group">
                   <label className="label">OpenAI API Key</label>
                   <input
                     type="password"
@@ -234,8 +232,8 @@ export default function SettingsPage() {
                     value={customKey}
                     onChange={(e) => setCustomKey(e.target.value)}
                   />
-                  <p className="text-[10px] text-[var(--color-muted)] mt-1.5">
-                    Your key is stored securely in your local environment. We do not store keys on our databases.
+                  <p className="text-[11px] text-[var(--color-muted-foreground)] mt-1.5">
+                    Your key is stored securely in your local environment. We do not store keys in our databases.
                   </p>
                 </div>
               )}
@@ -249,9 +247,9 @@ export default function SettingsPage() {
           </div>
 
           {/* Notifications Card */}
-          <div id="notifications" className="card space-y-4 scroll-mt-6">
+          <div id="notifications" className="card space-y-4 scroll-mt-6 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-5 shadow-xs">
             <h3 className="text-base font-semibold text-[var(--color-foreground)] flex items-center gap-2 border-b border-[var(--color-border)] pb-3">
-              <Bell className="w-4 h-4 text-[#FAFAFA]" />
+              <Bell className="w-4 h-4 text-[var(--color-foreground)]" />
               Notifications
             </h3>
 
@@ -259,7 +257,7 @@ export default function SettingsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[var(--color-foreground)]">Email Follow-ups</label>
-                  <p className="text-[11px] text-[var(--color-muted)] leading-relaxed">
+                  <p className="text-[11px] text-[var(--color-muted-foreground)] leading-relaxed">
                     Receive email alerts when job application interview dates are approaching.
                   </p>
                 </div>
@@ -267,14 +265,14 @@ export default function SettingsPage() {
                   type="checkbox"
                   checked={emailAlerts}
                   onChange={(e) => setEmailAlerts(e.target.checked)}
-                  className="rounded border-[var(--color-border)] bg-[var(--color-surface-3)] focus:ring-[var(--color-primary)]"
+                  className="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
               </div>
 
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[var(--color-foreground)]">Weekly Job Digest</label>
-                  <p className="text-[11px] text-[var(--color-muted)] leading-relaxed">
+                  <p className="text-[11px] text-[var(--color-muted-foreground)] leading-relaxed">
                     Get a weekly dashboard summary showing response rates, upcoming schedules, and resume fits.
                   </p>
                 </div>
@@ -282,7 +280,7 @@ export default function SettingsPage() {
                   type="checkbox"
                   checked={weeklyDigest}
                   onChange={(e) => setWeeklyDigest(e.target.checked)}
-                  className="rounded border-[var(--color-border)] bg-[var(--color-surface-3)] focus:ring-[var(--color-primary)]"
+                  className="rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
               </div>
             </div>
@@ -294,14 +292,14 @@ export default function SettingsPage() {
       {/* Upgrade Mock Success Modal */}
       {showUpgradeModal && (
         <>
-          <div className="overlay z-[90] animate-[fadeIn_0.15s_ease-out]" onClick={() => setShowUpgradeModal(false)} />
+          <div className="overlay z-[90]" onClick={() => setShowUpgradeModal(false)} />
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="dialog w-full max-w-md animate-[scale-in_0.2s_cubic-bezier(0.16,1,0.3,1)] p-6 text-center space-y-5">
-              <div className="w-12 h-12 rounded-[2px] bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981] flex items-center justify-center mx-auto text-xl">
+            <div className="dialog w-full max-w-md p-6 text-center space-y-5 rounded-[8px]">
+              <div className="w-12 h-12 rounded-[6px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 flex items-center justify-center mx-auto text-xl">
                 <Check className="w-6 h-6" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-lg font-bold text-[var(--color-foreground)] uppercase">Upgraded to Pro</h2>
+                <h2 className="text-lg font-bold text-[var(--color-foreground)]">Upgraded to Pro</h2>
                 <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
                   Welcome to <strong>Job Tracker Pro</strong>. You now have unlimited job description parsing, active resume match scores, and automated stage tracking.
                 </p>

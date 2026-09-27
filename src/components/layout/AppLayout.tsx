@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
-import { Bot, MessageSquare, LayoutDashboard, Kanban, FileText, Settings, LogOut, Menu, ChevronLeft } from "lucide-react";
-import ChatSidebar from "../chat/ChatSidebar";
+import { LayoutDashboard, Kanban, FileText, Settings, LogOut, Menu, ChevronLeft } from "lucide-react";
 import { JTLogo } from "./JTLogo";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   {
@@ -36,28 +36,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-
-  const handleActionTriggered = (action: any) => {
-    console.log("Chat action triggered:", action);
-    if (action.type === "MOVE_APPLICATION") {
-      window.location.reload();
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#FAFAFA] flex">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] flex transition-theme">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[#27272A] bg-[#111114] transition-all duration-200 ${
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-1)] transition-all duration-200 ${
           sidebarCollapsed ? "w-[72px]" : "w-[240px]"
         } ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-4 border-b border-[#27272A]">
+        <div className="h-16 flex items-center gap-3 px-4 border-b border-[var(--color-border)]">
           <JTLogo size={28} />
           {!sidebarCollapsed && (
-            <span className="font-bold text-xs tracking-wider uppercase text-[#FAFAFA] whitespace-nowrap">
+            <span className="font-bold text-xs tracking-wider uppercase text-[var(--color-foreground)] whitespace-nowrap">
               Job Tracker
             </span>
           )}
@@ -72,10 +64,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide uppercase transition-colors rounded-[2px] ${
+                className={`flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide transition-colors rounded-[6px] ${
                   isActive
-                    ? "bg-[#18181B] text-[#FAFAFA] border-l-2 border-[#FAFAFA]"
-                    : "text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#18181B] border-l-2 border-transparent"
+                    ? "bg-[var(--color-surface-2)] text-[var(--color-foreground)] border-l-2 border-[var(--color-primary)] font-medium"
+                    : "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-2)] border-l-2 border-transparent"
                 }`}
                 id={`nav-${item.label.toLowerCase()}`}
               >
@@ -90,7 +82,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="hidden lg:block px-2 pb-2">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center py-2 text-[#71717A] hover:text-[#FAFAFA] hover:bg-[#18181B] border border-transparent hover:border-[#27272A] rounded-[2px] transition-colors"
+            className="w-full flex items-center justify-center py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-2)] border border-transparent hover:border-[var(--color-border)] rounded-[6px] transition-colors"
             id="sidebar-collapse-btn"
             title="Toggle Sidebar"
           >
@@ -102,17 +94,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* User Footer */}
-        <div className="border-t border-[#27272A] p-3 bg-[#09090B]">
+        <div className="border-t border-[var(--color-border)] p-3 bg-[var(--color-surface-0)]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[2px] bg-[#18181B] border border-[#27272A] flex items-center justify-center shrink-0 text-xs font-mono text-[#FAFAFA]">
+            <div className="w-8 h-8 rounded-[6px] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shrink-0 text-xs font-mono text-[var(--color-foreground)]">
               {session?.user?.name?.[0]?.toUpperCase() || session?.user?.email?.[0]?.toUpperCase() || "U"}
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#FAFAFA] truncate">
+                <p className="text-xs font-semibold text-[var(--color-foreground)] truncate">
                   {session?.user?.name || "Workspace User"}
                 </p>
-                <p className="text-[10px] font-mono text-[#71717A] truncate">
+                <p className="text-[10px] font-mono text-[var(--color-muted-foreground)] truncate">
                   {session?.user?.email}
                 </p>
               </div>
@@ -120,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {!sidebarCollapsed && (
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="p-1.5 rounded-[2px] text-[#71717A] hover:text-[#FAFAFA] hover:bg-[#18181B] border border-transparent hover:border-[#27272A] transition-colors"
+                className="p-1.5 rounded-[6px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-2)] border border-transparent hover:border-[var(--color-border)] transition-colors"
                 title="Sign out"
                 id="signout-btn"
               >
@@ -134,7 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/70 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -146,10 +138,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-20 h-16 bg-[#09090B] border-b border-[#27272A] flex items-center px-4 lg:px-6">
+        <header className="sticky top-0 z-20 h-16 bg-[var(--color-background)] border-b border-[var(--color-border)] flex items-center px-4 lg:px-6 transition-theme">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="lg:hidden p-2 rounded-[2px] text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#18181B] mr-3"
+            className="lg:hidden p-2 rounded-[6px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-2)] mr-3"
             id="mobile-menu-btn"
           >
             <Menu size={18} />
@@ -159,15 +151,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Action Controls */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className="px-3 py-1.5 rounded-[2px] bg-[#18181B] hover:bg-[#27272A] text-[#FAFAFA] text-xs font-mono transition-colors flex items-center gap-2 border border-[#27272A]"
-              title="Assistant"
-              id="chat-toggle-header-btn"
-            >
-              <Bot size={14} />
-              <span className="hidden sm:inline uppercase">Assistant</span>
-            </button>
+            <ThemeToggle />
             <span className="badge badge-primary text-[10px] uppercase font-mono">
               Production
             </span>
@@ -176,27 +160,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main className="p-4 lg:p-6">{children}</main>
-
-        {/* Floating Chat Trigger Button */}
-        <button
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className="fixed bottom-6 right-6 z-40 p-3 rounded-[2px] bg-[#FAFAFA] text-[#09090B] hover:bg-[#E4E4E7] shadow-lg transition-colors flex items-center justify-center border border-[#FAFAFA]"
-          id="chat-toggle-btn"
-          title="Toggle Chat Assistant"
-        >
-          <div className="relative flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
-            <MessageSquare size={16} />
-            <span className="hidden sm:inline">Assistant</span>
-            <span className="w-1.5 h-1.5 rounded-[1px] bg-[#10B981]" />
-          </div>
-        </button>
-
-        {/* Chatbot Drawer */}
-        <ChatSidebar
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          onActionTriggered={handleActionTriggered}
-        />
       </div>
     </div>
   );
