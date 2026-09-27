@@ -15,9 +15,9 @@ import {
   CheckCircle, 
   AlertTriangle, 
   FileText, 
-  HelpCircle,
-  TrendingUp,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 
 interface Resume {
@@ -73,9 +73,19 @@ export function ApplicationDetailModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Collapsible section states (collapsed by default per implementation plan)
+  const [openJdSummary, setOpenJdSummary] = useState(true);
+  const [openJdSkills, setOpenJdSkills] = useState(false);
+  const [openJdResp, setOpenJdResp] = useState(false);
+  const [openJdPerks, setOpenJdPerks] = useState(false);
+
+  const [openMatchSkills, setOpenMatchSkills] = useState(true);
+  const [openMatchStrengths, setOpenMatchStrengths] = useState(false);
+  const [openMatchAts, setOpenMatchAts] = useState(false);
+
   const [, startTransition] = useTransition();
 
-  // Load resumes when mounting or switching to match tab
+  // Load resumes when mounting
   useEffect(() => {
     async function fetchResumes() {
       setLoadingResumes(true);
@@ -106,25 +116,37 @@ export function ApplicationDetailModal({
     setSourceUrl(application.sourceUrl || "");
   }, [application]);
 
-  const handleStatusChange = async (newStatus: Status) => {
-    setStatus(newStatus);
-    try {
-      const res = await fetch(`/api/applications/${application.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        const { application: updated } = await res.json();
-        onUpdate(updated);
-      }
-    } catch (err) {
-      console.error("Failed to update status", err);
+  const showFeedback = (msg: string, isErr = false) => {
+    if (isErr) {
+      setError(msg);
+      setTimeout(() => setError(""), 4000);
+    } else {
+      setSuccess(msg);
+      setTimeout(() => setSuccess(""), 4000);
     }
   };
 
+  const handleStatusChange = (newStatus: Status) => {
+    setStatus(newStatus);
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/applications/${application.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (res.ok) {
+          const { application: updated } = await res.json();
+          onUpdate(updated);
+          showFeedback("Status updated");
+        }
+      } catch {
+        showFeedback("Failed to update status", true);
+      }
+    });
+  };
+
   const saveNotes = async () => {
-    setIsEditingNotes(false);
     try {
       const res = await fetch(`/api/applications/${application.id}`, {
         method: "PATCH",
@@ -134,15 +156,15 @@ export function ApplicationDetailModal({
       if (res.ok) {
         const { application: updated } = await res.json();
         onUpdate(updated);
-        showFeedback("Notes saved successfully!");
+        setIsEditingNotes(false);
+        showFeedback("Notes saved");
       }
-    } catch (err) {
-      console.error("Failed to save notes", err);
+    } catch {
+      showFeedback("Failed to save notes", true);
     }
   };
 
   const saveJd = async () => {
-    setIsEditingJd(false);
     try {
       const res = await fetch(`/api/applications/${application.id}`, {
         method: "PATCH",
@@ -152,39 +174,40 @@ export function ApplicationDetailModal({
       if (res.ok) {
         const { application: updated } = await res.json();
         onUpdate(updated);
-        showFeedback("Job description saved!");
+        setIsEditingJd(false);
+        showFeedback("Job description saved");
       }
-    } catch (err) {
-      console.error("Failed to save JD", err);
+    } catch {
+      showFeedback("Failed to save job description", true);
     }
   };
 
   const saveInfo = async () => {
-    setIsEditingInfo(false);
     try {
       const res = await fetch(`/api/applications/${application.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location, salary, jobType, sourceUrl }),
+        body: JSON.stringify({
+          location,
+          salary,
+          jobType,
+          sourceUrl,
+        }),
       });
       if (res.ok) {
         const { application: updated } = await res.json();
         onUpdate(updated);
-        showFeedback("Job details updated!");
+        setIsEditingInfo(false);
+        showFeedback("Details updated");
       }
-    } catch (err) {
-      console.error("Failed to save info", err);
+    } catch {
+      showFeedback("Failed to update details", true);
     }
-  };
-
-  const showFeedback = (msg: string) => {
-    setSuccess(msg);
-    setTimeout(() => setSuccess(""), 3000);
   };
 
   const handleParseJd = async () => {
     if (!jdRaw.trim()) {
-      setError("Please add a job description text first");
+      setError("Please paste a job description first");
       return;
     }
     setIsParsingJd(true);
@@ -196,10 +219,8 @@ export function ApplicationDetailModal({
         body: JSON.stringify({ applicationId: application.id, jdText: jdRaw }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to parse JD");
+      if (!res.ok) throw new Error(data.error || "Failed to parse job description");
       
-      // Update local application with the response
-      // Fetch latest application data
       const refreshRes = await fetch(`/api/applications/${application.id}`);
       if (refreshRes.ok) {
         const { application: updated } = await refreshRes.json();
@@ -229,7 +250,6 @@ export function ApplicationDetailModal({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to calculate match score");
 
-      // Refresh application data
       const refreshRes = await fetch(`/api/applications/${application.id}`);
       if (refreshRes.ok) {
         const { application: updated } = await refreshRes.json();
@@ -244,10 +264,10 @@ export function ApplicationDetailModal({
   };
 
   const getScoreColor = (score: number | null) => {
-    if (score === null) return "text-[var(--color-muted)] bg-[var(--color-surface-2)]";
-    if (score >= 75) return "text-[var(--color-success)] bg-[var(--color-success-muted)] border-[rgba(16,185,129,0.2)]";
-    if (score >= 50) return "text-[var(--color-warning)] bg-[var(--color-warning-muted)] border-[rgba(245,158,11,0.2)]";
-    return "text-[var(--color-danger)] bg-[var(--color-danger-muted)] border-[rgba(244,63,94,0.2)]";
+    if (score === null) return "text-[var(--color-muted-foreground)] bg-[var(--color-surface-2)] border-[var(--color-border)]";
+    if (score >= 75) return "text-emerald-500 bg-emerald-500/10 border-emerald-500/30";
+    if (score >= 50) return "text-amber-500 bg-amber-500/10 border-amber-500/30";
+    return "text-red-500 bg-red-500/10 border-red-500/30";
   };
 
   const parsedJdData = application.jdParsed as any;
@@ -265,17 +285,17 @@ export function ApplicationDetailModal({
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-[var(--color-surface-1)] border-l border-[var(--color-border)] shadow-2xl flex flex-col h-full animate-[slideIn_0.3s_cubic-bezier(0.16,1,0.3,1)]">
         
         {/* Header */}
-        <div className="p-6 border-b border-[var(--color-border)] flex items-start justify-between bg-[var(--color-surface-2)]">
+        <div className="p-6 border-b border-[var(--color-border)] flex items-start justify-between bg-[var(--color-surface-0)]">
           <div className="space-y-1 flex-1 mr-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-primary)]">
-              Job Application Details
+            <span className="text-xs font-semibold text-[var(--color-primary)]">
+              Application Details
             </span>
             <h2 className="text-xl font-bold text-[var(--color-foreground)] line-clamp-1">
               {application.role}
             </h2>
             <div className="flex items-center gap-1.5 text-sm text-[var(--color-muted-foreground)]">
               <Building className="w-4 h-4 text-[var(--color-muted)]" />
-              <span className="font-medium">{application.company}</span>
+              <span className="font-medium text-[var(--color-foreground)]">{application.company}</span>
               <span className="text-[var(--color-muted)]">•</span>
               <Calendar className="w-3.5 h-3.5" />
               <span>Added {new Date(application.createdAt).toLocaleDateString()}</span>
@@ -287,7 +307,7 @@ export function ApplicationDetailModal({
             <select
               value={status}
               onChange={(e) => handleStatusChange(e.target.value as Status)}
-              className="input select text-xs py-1.5 px-3 h-auto min-w-[120px] rounded-lg"
+              className="input select text-xs py-1.5 px-3 h-auto min-w-[120px] rounded-[6px]"
               id="detail-status-select"
             >
               {STATUS_OPTIONS.map((opt) => (
@@ -299,7 +319,7 @@ export function ApplicationDetailModal({
             
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-[var(--color-surface-3)] text-[var(--color-muted)] transition-colors"
+              className="p-2 rounded-[6px] hover:bg-[var(--color-surface-2)] text-[var(--color-muted-foreground)] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -308,20 +328,20 @@ export function ApplicationDetailModal({
 
         {/* Feedback Messages */}
         {success && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-[var(--color-success-muted)] border border-[rgba(16,185,129,0.2)] text-xs text-[var(--color-success)] flex items-center gap-2">
+          <div className="mx-6 mt-4 p-3 rounded-[6px] bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
             <CheckCircle className="w-4 h-4 shrink-0" />
             <span>{success}</span>
           </div>
         )}
         {error && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-[var(--color-danger-muted)] border border-[rgba(244,63,94,0.2)] text-xs text-[var(--color-danger)] flex items-center gap-2">
+          <div className="mx-6 mt-4 p-3 rounded-[6px] bg-red-500/10 border border-red-500/20 text-xs text-red-500 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Tabs Bar */}
-        <div className="px-6 border-b border-[var(--color-border)] flex gap-4 bg-[var(--color-surface-1)]">
+        <div className="px-6 border-b border-[var(--color-border)] flex gap-4 bg-[var(--color-surface-0)]">
           {[
             { id: "details", label: "Details & Notes" },
             { id: "jd", label: "Job Description (AI)", badge: parsedJdData ? "Parsed" : null },
@@ -333,15 +353,15 @@ export function ApplicationDetailModal({
               className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-all relative ${
                 activeTab === tab.id
                   ? "border-[var(--color-primary)] text-[var(--color-foreground)]"
-                  : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               }`}
             >
               {tab.label}
               {tab.badge && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-[2px] font-bold uppercase tracking-wider ${
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] font-semibold tracking-wider ${
                   tab.id === "match" 
-                    ? application.matchScore && application.matchScore >= 75 ? "bg-[var(--color-success-muted)] text-[var(--color-success)]" : "bg-[var(--color-warning-muted)] text-[var(--color-warning)]"
-                    : "bg-[var(--color-primary-muted)] text-[var(--color-primary)]"
+                    ? application.matchScore && application.matchScore >= 75 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                 }`}>
                   {tab.badge}
                 </span>
@@ -351,16 +371,16 @@ export function ApplicationDetailModal({
         </div>
 
         {/* Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
           {/* TAB 1: DETAILS & NOTES */}
           {activeTab === "details" && (
             <>
               {/* Job Info Grid */}
-              <div className="card space-y-4">
+              <div className="card space-y-4 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
-                    <Building className="w-4 h-4 text-[var(--color-muted)]" />
+                    <Building className="w-4 h-4 text-[var(--color-muted-foreground)]" />
                     Core Information
                   </h3>
                   <button
@@ -425,34 +445,34 @@ export function ApplicationDetailModal({
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                      <MapPin className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+                    <div className="flex items-center gap-2.5 p-3 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)]">
+                      <MapPin className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0" />
                       <div>
-                        <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase">Location</p>
+                        <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase">Location</p>
                         <p className="text-xs font-semibold text-[var(--color-foreground)] truncate">{application.location || "Not specified"}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                      <DollarSign className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+                    <div className="flex items-center gap-2.5 p-3 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)]">
+                      <DollarSign className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0" />
                       <div>
-                        <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase">Salary Range</p>
+                        <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase">Salary Range</p>
                         <p className="text-xs font-semibold text-[var(--color-foreground)] truncate">{application.salary || "Not specified"}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                      <Briefcase className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+                    <div className="flex items-center gap-2.5 p-3 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)]">
+                      <Briefcase className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0" />
                       <div>
-                        <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase">Employment Type</p>
+                        <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase">Employment Type</p>
                         <p className="text-xs font-semibold text-[var(--color-foreground)] truncate">{application.jobType || "Not specified"}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                      <Link2 className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+                    <div className="flex items-center gap-2.5 p-3 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)]">
+                      <Link2 className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0" />
                       <div>
-                        <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase">Job Source</p>
+                        <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase">Job Source</p>
                         {application.sourceUrl ? (
                           <a 
                             href={application.sourceUrl} 
@@ -472,10 +492,10 @@ export function ApplicationDetailModal({
               </div>
 
               {/* Notes Section */}
-              <div className="card space-y-3">
+              <div className="card space-y-3 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
-                    My Notes
+                    Notes
                   </h3>
                   <button
                     onClick={() => {
@@ -493,11 +513,11 @@ export function ApplicationDetailModal({
                     onChange={(e) => setNotes(e.target.value)}
                     className="input textarea w-full text-xs"
                     rows={8}
-                    placeholder="Type call logs, follow-ups, interview questions, salary talks..."
+                    placeholder="Add interview notes, call logs, follow-up reminders..."
                   />
                 ) : (
-                  <div className="p-4 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)] min-h-[120px] whitespace-pre-wrap text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                    {application.notes ? application.notes : "No notes written yet. Add details about your contact person, interview dates, or custom remarks."}
+                  <div className="p-4 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)] min-h-[120px] whitespace-pre-wrap text-xs text-[var(--color-muted-foreground)] leading-relaxed">
+                    {application.notes ? application.notes : "No notes written yet. Add notes about your interviews, questions, or next steps."}
                   </div>
                 )}
               </div>
@@ -506,12 +526,12 @@ export function ApplicationDetailModal({
 
           {/* TAB 2: JOB DESCRIPTION (AI) */}
           {activeTab === "jd" && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Parse Controller / Raw JD Card */}
-              <div className="card space-y-4">
+              <div className="card space-y-4 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[var(--color-muted)]" />
+                    <FileText className="w-4 h-4 text-[var(--color-muted-foreground)]" />
                     Job Description Text
                   </h3>
                   <div className="flex items-center gap-3">
@@ -528,9 +548,9 @@ export function ApplicationDetailModal({
                       <button
                         onClick={handleParseJd}
                         disabled={isParsingJd}
-                        className="btn-primary text-xs py-1 px-3 h-auto flex items-center gap-1.5"
+                        className="btn-primary text-xs py-1.5 px-3 h-auto flex items-center gap-1.5"
                       >
-                        <Sparkles className="w-3 h-3" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         {isParsingJd ? "Extracting..." : "Extract Requirements"}
                       </button>
                     )}
@@ -543,22 +563,22 @@ export function ApplicationDetailModal({
                     onChange={(e) => setJdRaw(e.target.value)}
                     className="input textarea w-full text-xs"
                     rows={10}
-                    placeholder="Paste the full job description text from LinkedIn or the job board..."
+                    placeholder="Paste the full job description text here..."
                   />
                 ) : jdRaw ? (
-                  <details className="group border border-[var(--color-border)] rounded-xl bg-[var(--color-surface-2)]">
+                  <details className="group border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-0)]">
                     <summary className="p-3 text-xs font-semibold text-[var(--color-muted-foreground)] cursor-pointer list-none flex items-center justify-between">
-                      <span>Show/Hide Raw Job Description Text</span>
-                      <span className="text-xs text-[var(--color-primary)] group-open:rotate-180 transition-transform">▼</span>
+                      <span>View Raw Job Description</span>
+                      <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
                     </summary>
                     <div className="p-4 border-t border-[var(--color-border)] max-h-60 overflow-y-auto text-xs text-[var(--color-muted-foreground)] leading-relaxed whitespace-pre-wrap">
                       {jdRaw}
                     </div>
                   </details>
                 ) : (
-                  <div className="p-6 text-center border-2 border-dashed border-[var(--color-border)] rounded-xl">
-                    <p className="text-xs text-[var(--color-muted)] mb-3">
-                      No job description saved. Paste it to let the AI parser break down required skills, qualifications, and benefits.
+                  <div className="p-6 text-center border-2 border-dashed border-[var(--color-border)] rounded-[6px]">
+                    <p className="text-xs text-[var(--color-muted-foreground)] mb-3">
+                      No job description saved. Paste it to enable AI skill breakdown and match scoring.
                     </p>
                     <button
                       onClick={() => setIsEditingJd(true)}
@@ -572,88 +592,134 @@ export function ApplicationDetailModal({
 
               {/* Parsed Output */}
               {isParsingJd && (
-                <div className="card flex flex-col items-center justify-center py-12 space-y-3">
-                  <div className="loading-spinner animate-spin border-t-[var(--color-primary)]" style={{ width: 32, height: 32 }} />
-                  <p className="text-xs text-[var(--color-muted-foreground)]">GPT-4o-mini is extracting skills and specifications...</p>
+                <div className="card flex flex-col items-center justify-center py-10 space-y-3 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)]">
+                  <div className="loading-spinner" />
+                  <p className="text-xs text-[var(--color-muted-foreground)]">Extracting skills, qualifications, and role details...</p>
                 </div>
               )}
 
               {parsedJdData && !isParsingJd && (
-                <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
-                  {/* Summary & Qualifications */}
-                  <div className="card space-y-3">
-                    <h3 className="text-sm font-semibold text-[var(--color-foreground)]">AI Analysis Summary</h3>
-                    {parsedJdData.company_description && (
-                      <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed italic bg-[var(--color-surface-2)] p-3 rounded-xl border border-[var(--color-border)]">
-                        &ldquo;{parsedJdData.company_description}&rdquo;
-                      </p>
+                <div className="space-y-3">
+                  {/* Collapsible Section 1: Summary */}
+                  <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                    <button
+                      onClick={() => setOpenJdSummary(!openJdSummary)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                        <Sparkles size={16} className="text-[var(--color-primary)]" />
+                        AI Analysis Summary
+                      </span>
+                      {openJdSummary ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                    {openJdSummary && (
+                      <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2 space-y-3">
+                        {parsedJdData.company_description && (
+                          <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed italic bg-[var(--color-surface-0)] p-3 rounded-[6px] border border-[var(--color-border)]">
+                            &ldquo;{parsedJdData.company_description}&rdquo;
+                          </p>
+                        )}
+                        <div className="grid grid-cols-2 gap-4 pt-1">
+                          <div>
+                            <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase">Experience Level</p>
+                            <p className="text-xs font-semibold text-[var(--color-foreground)] mt-0.5">{parsedJdData.years_experience || "Not specified"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase">Education Required</p>
+                            <p className="text-xs font-semibold text-[var(--color-foreground)] mt-0.5">{parsedJdData.education_required || "Not specified"}</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
-                    <div className="grid grid-cols-2 gap-4 pt-1">
-                      <div>
-                        <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase">Experience Level</p>
-                        <p className="text-xs font-semibold text-[var(--color-foreground)] mt-0.5">{parsedJdData.years_experience || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase">Education Required</p>
-                        <p className="text-xs font-semibold text-[var(--color-foreground)] mt-0.5">{parsedJdData.education_required || "Not specified"}</p>
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Skills Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="card space-y-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                        Required Skills
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {parsedJdData.required_skills?.map((skill: string) => (
-                          <span key={skill} className="badge badge-primary text-[10px] py-0.5 px-2">
-                            {skill}
-                          </span>
-                        )) || <span className="text-xs text-[var(--color-muted)]">None found</span>}
+                  {/* Collapsible Section 2: Skills */}
+                  <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                    <button
+                      onClick={() => setOpenJdSkills(!openJdSkills)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                        <CheckCircle size={16} className="text-emerald-500" />
+                        Required & Preferred Skills ({((parsedJdData.required_skills?.length || 0) + (parsedJdData.preferred_skills?.length || 0))})
+                      </span>
+                      {openJdSkills ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                    {openJdSkills && (
+                      <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2 space-y-3">
+                        <div>
+                          <h4 className="text-xs font-semibold text-[var(--color-foreground)] mb-1.5">Required Skills:</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {parsedJdData.required_skills?.map((skill: string) => (
+                              <span key={skill} className="badge badge-primary text-[10px] py-0.5 px-2">
+                                {skill}
+                              </span>
+                            )) || <span className="text-xs text-[var(--color-muted-foreground)]">None</span>}
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-[var(--color-border)]">
+                          <h4 className="text-xs font-semibold text-[var(--color-foreground)] mb-1.5">Preferred Skills:</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {parsedJdData.preferred_skills?.map((skill: string) => (
+                              <span key={skill} className="badge badge-success text-[10px] py-0.5 px-2">
+                                {skill}
+                              </span>
+                            )) || <span className="text-xs text-[var(--color-muted-foreground)]">None</span>}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="card space-y-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-success)] flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[var(--color-success)]" />
-                        Preferred Skills
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {parsedJdData.preferred_skills?.map((skill: string) => (
-                          <span key={skill} className="badge badge-success text-[10px] py-0.5 px-2">
-                            {skill}
-                          </span>
-                        )) || <span className="text-xs text-[var(--color-muted)]">None found</span>}
-                      </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Responsibilities */}
+                  {/* Collapsible Section 3: Responsibilities */}
                   {parsedJdData.responsibilities && parsedJdData.responsibilities.length > 0 && (
-                    <div className="card space-y-2.5">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-foreground)]">Responsibilities</h3>
-                      <ul className="space-y-1.5 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
-                        {parsedJdData.responsibilities.map((resp: string, idx: number) => (
-                          <li key={idx}>{resp}</li>
-                        ))}
-                      </ul>
+                    <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                      <button
+                        onClick={() => setOpenJdResp(!openJdResp)}
+                        className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                          <Briefcase size={16} className="text-blue-500" />
+                          Key Responsibilities ({parsedJdData.responsibilities.length})
+                        </span>
+                        {openJdResp ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                      {openJdResp && (
+                        <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2">
+                          <ul className="space-y-1.5 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed pt-2">
+                            {parsedJdData.responsibilities.map((resp: string, idx: number) => (
+                              <li key={idx}>{resp}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Perks & Benefits */}
+                  {/* Collapsible Section 4: Perks & Benefits */}
                   {parsedJdData.perks && parsedJdData.perks.length > 0 && (
-                    <div className="card space-y-2.5">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-warning)]">Benefits & Perks</h3>
-                      <div className="flex flex-wrap gap-1.5">
-                        {parsedJdData.perks.map((perk: string) => (
-                          <span key={perk} className="badge badge-muted text-[10px] py-0.5 px-2">
-                            {perk}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                      <button
+                        onClick={() => setOpenJdPerks(!openJdPerks)}
+                        className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                          <Sparkles size={16} className="text-amber-500" />
+                          Benefits & Perks ({parsedJdData.perks.length})
+                        </span>
+                        {openJdPerks ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                      {openJdPerks && (
+                        <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2 pt-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {parsedJdData.perks.map((perk: string) => (
+                              <span key={perk} className="badge badge-muted text-[10px] py-0.5 px-2">
+                                {perk}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -663,22 +729,22 @@ export function ApplicationDetailModal({
 
           {/* TAB 3: RESUME MATCHER (AI) */}
           {activeTab === "match" && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               
               {/* Active Resume Selection Card */}
-              <div className="card space-y-4">
+              <div className="card space-y-4 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
                 <h3 className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[var(--color-muted)]" />
+                  <FileText className="w-4 h-4 text-[var(--color-muted-foreground)]" />
                   Target Resume
                 </h3>
 
                 {loadingResumes ? (
-                  <div className="text-xs text-[var(--color-muted-foreground)]">Checking user resumes...</div>
+                  <div className="text-xs text-[var(--color-muted-foreground)]">Loading resumes...</div>
                 ) : activeResume ? (
-                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
+                  <div className="flex items-center justify-between p-3.5 rounded-[6px] bg-[var(--color-surface-0)] border border-[var(--color-border)]">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-[var(--color-foreground)] truncate">{activeResume.filename}</p>
-                      <p className="text-[10px] text-[var(--color-muted)] mt-0.5">
+                      <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
                         Active Resume · {activeResume.parsedSkills.length} skills detected
                       </p>
                     </div>
@@ -694,7 +760,7 @@ export function ApplicationDetailModal({
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 text-center border border-[var(--color-border)] rounded-xl bg-[var(--color-surface-2)]">
+                  <div className="p-4 text-center border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-0)]">
                     <p className="text-xs text-[var(--color-muted-foreground)] mb-3">
                       You haven't uploaded a resume yet. Upload your resume to enable ATS match scoring.
                     </p>
@@ -705,120 +771,157 @@ export function ApplicationDetailModal({
                 )}
                 
                 {activeResume && !jdRaw.trim() && (
-                  <div className="p-3 rounded-xl bg-[var(--color-warning-muted)] border border-[rgba(245,158,11,0.2)] text-[11px] text-[var(--color-warning)] flex items-center gap-2">
+                  <div className="p-3 rounded-[6px] bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>You must add the job description text on the <strong>Job Description</strong> tab to compute a match score.</span>
+                    <span>Please add the job description on the <strong>Job Description</strong> tab to compute a match score.</span>
                   </div>
                 )}
               </div>
 
               {/* Analysis Loading */}
               {isMatchingResume && (
-                <div className="card flex flex-col items-center justify-center py-12 space-y-3">
-                  <div className="loading-spinner animate-spin border-t-[var(--color-primary)]" style={{ width: 32, height: 32 }} />
-                  <p className="text-xs text-[var(--color-muted-foreground)]">AI is analyzing keyword density, overlap, and qualifications...</p>
+                <div className="card flex flex-col items-center justify-center py-10 space-y-3 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)]">
+                  <div className="loading-spinner" />
+                  <p className="text-xs text-[var(--color-muted-foreground)]">AI is calculating keyword match and qualification alignment...</p>
                 </div>
               )}
 
               {/* Match Output */}
               {application.matchScore !== null && !isMatchingResume && (
-                <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+                <div className="space-y-3">
                   
-                  {/* Score circle & grade */}
-                  <div className="card flex items-center gap-6 bg-[#18181B] border border-[#27272A]">
-                    <div className={`w-20 h-20 rounded-[2px] border-2 flex flex-col items-center justify-center shrink-0 ${getScoreColor(application.matchScore)}`}>
+                  {/* Score Card */}
+                  <div className="card flex items-center gap-5 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-5 shadow-xs">
+                    <div className={`w-16 h-16 rounded-[6px] border-2 flex flex-col items-center justify-center shrink-0 ${getScoreColor(application.matchScore)}`}>
                       <span className="text-2xl font-black">{application.matchScore}%</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Score</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider opacity-80">Match</span>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[var(--color-foreground)]">Match Grade: {matchAnalysis?.grade || "N/A"}</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-[2px] bg-[var(--color-surface-3)] text-[var(--color-foreground)]">
+                        <span className="text-sm font-semibold text-[var(--color-foreground)]">Grade: {matchAnalysis?.grade || "B"}</span>
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-[4px] bg-[var(--color-surface-2)] text-[var(--color-foreground)] border border-[var(--color-border)]">
                           Likelihood: {matchAnalysis?.interview_likelihood || "Medium"}
                         </span>
                       </div>
                       <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                        {matchAnalysis?.summary || "Your resume has been successfully compared to the job requirements."}
+                        {matchAnalysis?.summary || "Your resume has been evaluated against the job specifications."}
                       </p>
                     </div>
                   </div>
 
-                  {/* Skills Venn Diagram */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="card space-y-2">
-                      <h4 className="text-xs font-bold text-[var(--color-success)] uppercase tracking-wider flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Matched Skills ({matchAnalysis?.matched_skills?.length || 0})
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {matchAnalysis?.matched_skills?.map((skill: string) => (
-                          <span key={skill} className="badge badge-success text-[10px] py-0.5 px-2">
-                            {skill}
-                          </span>
-                        )) || <span className="text-xs text-[var(--color-muted)]">None</span>}
-                      </div>
-                    </div>
-
-                    <div className="card space-y-2">
-                      <h4 className="text-xs font-bold text-[var(--color-danger)] uppercase tracking-wider flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        Missing Skills ({matchAnalysis?.missing_skills?.length || 0})
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {matchAnalysis?.missing_skills?.map((skill: string) => (
-                          <span key={skill} className="badge badge-danger text-[10px] py-0.5 px-2">
-                            {skill}
-                          </span>
-                        )) || <span className="text-xs text-[var(--color-muted)]">None</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Strengths & Gaps */}
-                  <div className="card space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-foreground)]">Resume Strengths</h3>
-                    <ul className="space-y-1.5 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
-                      {matchAnalysis?.strengths?.map((str: string, idx: number) => (
-                        <li key={idx} className="marker:text-[var(--color-success)]">{str}</li>
-                      )) || <li>Strong general alignment.</li>}
-                    </ul>
-                  </div>
-
-                  <div className="card space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-foreground)]">Gap Analysis</h3>
-                    <ul className="space-y-1.5 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
-                      {matchAnalysis?.gaps?.map((gap: string, idx: number) => (
-                        <li key={idx} className="marker:text-[var(--color-danger)]">{gap}</li>
-                      )) || <li>No major gaps detected.</li>}
-                    </ul>
-                  </div>
-
-                  {/* Suggestions for ATS optimization */}
-                  <div className="card space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">ATS Keywords & Suggestions</h3>
-                    
-                    {matchAnalysis?.ats_keywords && matchAnalysis.ats_keywords.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-semibold text-[var(--color-muted)] uppercase">Keywords to Integrate:</p>
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {matchAnalysis.ats_keywords.map((kw: string) => (
-                            <span key={kw} className="badge badge-primary text-[10px] py-0.5 px-2">
-                              {kw}
-                            </span>
-                          ))}
+                  {/* Collapsible Section 1: Skills Breakdown */}
+                  <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                    <button
+                      onClick={() => setOpenMatchSkills(!openMatchSkills)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                        <CheckCircle size={16} className="text-emerald-500" />
+                        Matched & Missing Skills
+                      </span>
+                      {openMatchSkills ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                    {openMatchSkills && (
+                      <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2 space-y-3">
+                        <div>
+                          <h4 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1.5">
+                            Matched Skills ({matchAnalysis?.matched_skills?.length || 0})
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {matchAnalysis?.matched_skills?.map((skill: string) => (
+                              <span key={skill} className="badge badge-success text-[10px] py-0.5 px-2">
+                                {skill}
+                              </span>
+                            )) || <span className="text-xs text-[var(--color-muted-foreground)]">None</span>}
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-[var(--color-border)]">
+                          <h4 className="text-xs font-semibold text-red-500 mb-1.5">
+                            Missing Skills ({matchAnalysis?.missing_skills?.length || 0})
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {matchAnalysis?.missing_skills?.map((skill: string) => (
+                              <span key={skill} className="badge badge-danger text-[10px] py-0.5 px-2">
+                                {skill}
+                              </span>
+                            )) || <span className="text-xs text-[var(--color-muted-foreground)]">None</span>}
+                          </div>
                         </div>
                       </div>
                     )}
-                    
-                    <div className="space-y-1.5 pt-2">
-                      <p className="text-[10px] font-semibold text-[var(--color-muted)] uppercase">Improvement Suggestions:</p>
-                      <ul className="space-y-1.5 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
-                        {matchAnalysis?.suggestions?.map((sugg: string, idx: number) => (
-                          <li key={idx}>{sugg}</li>
-                        )) || <li>Tailor resume summary to highlight matching skills.</li>}
-                      </ul>
-                    </div>
+                  </div>
+
+                  {/* Collapsible Section 2: Strengths & Gaps */}
+                  <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                    <button
+                      onClick={() => setOpenMatchStrengths(!openMatchStrengths)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                        <Sparkles size={16} className="text-blue-500" />
+                        Strengths & Gap Analysis
+                      </span>
+                      {openMatchStrengths ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                    {openMatchStrengths && (
+                      <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2 space-y-3">
+                        <div>
+                          <h4 className="text-xs font-semibold text-[var(--color-foreground)] mb-1">Resume Strengths:</h4>
+                          <ul className="space-y-1 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
+                            {matchAnalysis?.strengths?.map((str: string, idx: number) => (
+                              <li key={idx}>{str}</li>
+                            )) || <li>Strong baseline qualification match.</li>}
+                          </ul>
+                        </div>
+                        <div className="pt-2 border-t border-[var(--color-border)]">
+                          <h4 className="text-xs font-semibold text-[var(--color-foreground)] mb-1">Gap Analysis:</h4>
+                          <ul className="space-y-1 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
+                            {matchAnalysis?.gaps?.map((gap: string, idx: number) => (
+                              <li key={idx}>{gap}</li>
+                            )) || <li>No major gaps detected.</li>}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Collapsible Section 3: ATS Keywords & Suggestions */}
+                  <div className="border border-[var(--color-border)] rounded-[6px] bg-[var(--color-surface-1)] overflow-hidden">
+                    <button
+                      onClick={() => setOpenMatchAts(!openMatchAts)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                        <Cpu size={16} className="text-[var(--color-primary)]" />
+                        ATS Keywords & Suggestions
+                      </span>
+                      {openMatchAts ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                    {openMatchAts && (
+                      <div className="p-4 pt-0 border-t border-[var(--color-border)] mt-2 space-y-3">
+                        {matchAnalysis?.ats_keywords && matchAnalysis.ats_keywords.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-[var(--color-muted-foreground)] uppercase mb-1">Keywords to Integrate:</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {matchAnalysis.ats_keywords.map((kw: string) => (
+                                <span key={kw} className="badge badge-primary text-[10px] py-0.5 px-2">
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="pt-2 border-t border-[var(--color-border)]">
+                          <p className="text-[10px] font-semibold text-[var(--color-muted-foreground)] uppercase mb-1">Optimization Tips:</p>
+                          <ul className="space-y-1 text-xs text-[var(--color-muted-foreground)] pl-4 list-disc leading-relaxed">
+                            {matchAnalysis?.suggestions?.map((sugg: string, idx: number) => (
+                              <li key={idx}>{sugg}</li>
+                            )) || <li>Ensure key skills are prominently listed in your resume summary.</li>}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                 </div>

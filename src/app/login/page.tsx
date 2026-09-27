@@ -40,35 +40,35 @@ export default function LoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#09090B]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
         <div className="loading-spinner" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#09090B] p-4 text-[#FAFAFA]">
-      <div className="w-full max-w-md">
-        {/* Header Branding */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-surface-0)] p-4 text-[var(--color-foreground)]">
+      <div className="w-full max-w-sm">
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <JTLogo size={44} />
+            <JTLogo size={36} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#FAFAFA] mb-2 uppercase">
-            Job Tracker
+          <h1 className="text-xl font-bold tracking-tight text-[var(--color-foreground)] mb-1">
+            Sign in to Job Tracker
           </h1>
-          <p className="text-[#A1A1AA] text-xs font-mono">
-            Pipeline Access : Authenticate to Continue
+          <p className="text-sm text-[var(--color-muted-foreground)]">
+            Welcome back — let&apos;s pick up where you left off.
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="border border-[#27272A] bg-[#111114] p-8">
+        <div className="card p-6">
           {/* Google Login */}
           <button
             onClick={handleGoogleLogin}
             disabled={isGoogleLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 text-xs font-semibold tracking-wide uppercase transition-colors bg-[#18181B] text-[#FAFAFA] border border-[#27272A] hover:bg-[#27272A] disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--color-background)] text-[var(--color-foreground)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-1)] disabled:opacity-50 disabled:cursor-not-allowed mb-5"
             id="google-login-btn"
           >
             {isGoogleLoading ? (
@@ -85,19 +85,19 @@ export default function LoginPage() {
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-[#27272A]" />
-            <span className="text-[10px] font-mono text-[#71717A] uppercase tracking-widest">
-              Or Email Login
+          <div className="flex items-center gap-4 mb-5">
+            <div className="flex-1 h-px bg-[var(--color-border)]" />
+            <span className="text-xs text-[var(--color-muted)]">
+              or
             </span>
-            <div className="flex-1 h-px bg-[#27272A]" />
+            <div className="flex-1 h-px bg-[var(--color-border)]" />
           </div>
 
           {/* Email Login Form */}
           <form onSubmit={handleCredentialsLogin} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-xs font-mono text-[#A1A1AA] uppercase mb-1.5">
-                Email Address
+              <label htmlFor="email" className="label">
+                Email address
               </label>
               <input
                 id="email"
@@ -105,39 +105,39 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="input-field w-full"
+                className="input w-full"
                 required
               />
             </div>
             <button
               type="submit"
               disabled={isLoading || !email}
-              className="btn-primary w-full py-2.5 text-xs font-bold uppercase tracking-wider"
+              className="btn-primary w-full py-2.5 text-sm"
               id="email-login-btn"
             >
               {isLoading ? (
                 <div className="loading-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
               ) : (
-                "Authenticate with Email"
+                "Sign in with Email"
               )}
             </button>
           </form>
 
-          <p className="text-[11px] font-mono text-[#71717A] text-center mt-6">
-            Direct credential sign in. No password required for initial workspace setup.
+          <p className="text-xs text-[var(--color-muted)] text-center mt-5">
+            No password required. New accounts are created automatically.
           </p>
         </div>
 
-        {/* Footer Navigation & Legal */}
-        <div className="flex items-center justify-between mt-6 text-xs font-mono text-[#71717A]">
-          <Link href="/" className="hover:text-[#FAFAFA] transition-colors">
-            Back to Home
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-5 text-xs text-[var(--color-muted)]">
+          <Link href="/" className="hover:text-[var(--color-foreground)] transition-colors">
+            ← Back to home
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-[#FAFAFA] transition-colors">
+            <Link href="/privacy" className="hover:text-[var(--color-foreground)] transition-colors">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-[#FAFAFA] transition-colors">
+            <Link href="/terms" className="hover:text-[var(--color-foreground)] transition-colors">
               Terms
             </Link>
           </div>

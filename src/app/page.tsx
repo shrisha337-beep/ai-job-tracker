@@ -1,237 +1,163 @@
 import Link from "next/link";
 import { JTLogo } from "@/components/layout/JTLogo";
-import {
-  FileText,
-  Layers,
-  BarChart2,
-  ArrowRight,
-  ShieldCheck,
-  Cpu,
-} from "lucide-react";
+import { Layers, BarChart2, ArrowRight, Cpu } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#FAFAFA] antialiased selection:bg-[#27272A] selection:text-[#FAFAFA]">
-      {/* Navigation Header */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#09090B] border-b border-[#27272A]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <JTLogo size={28} />
-            <span className="font-bold text-sm tracking-tight uppercase text-[#FAFAFA]">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] antialiased">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-background)]/80 backdrop-blur-sm border-b border-[var(--color-border)]">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <JTLogo size={24} />
+            <span className="font-semibold text-sm text-[var(--color-foreground)]">
               Job Tracker
             </span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <Link
               href="/privacy"
-              className="text-xs font-mono text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors hidden sm:block"
+              className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors hidden sm:block"
             >
               Privacy
             </Link>
             <Link
               href="/terms"
-              className="text-xs font-mono text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors hidden sm:block"
+              className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors hidden sm:block"
             >
               Terms
             </Link>
             <Link
               href="/login"
-              className="btn-primary text-xs px-4 py-2"
+              className="text-xs font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/login"
+              className="btn-primary text-xs px-4 py-1.5"
               id="nav-login-btn"
             >
-              Access Dashboard
+              Get Started
             </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-16 px-6 border-b border-[#27272A] bg-grid">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="pt-36 pb-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
           {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#111114] border border-[#27272A] text-xs font-mono text-[#A1A1AA] mb-8">
-            <span className="w-2 h-2 bg-[#10B981]" />
-            SYSTEM STATUS : APPLICATION PIPELINE READY
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-full text-xs text-[var(--color-muted-foreground)] mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+            Open Source · Free to Use
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-[#FAFAFA] leading-[1.1] mb-6">
-            Structured Pipeline for Your Job Search.
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--color-foreground)] leading-[1.1] mb-5">
+            Track your job search
+            <br />
+            with clarity.
           </h1>
 
-          <p className="text-base sm:text-lg text-[#A1A1AA] max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-            Direct Kanban tracking, automated job description extraction, and resume requirement matching. Built for speed, clarity, and control.
+          <p className="text-base sm:text-lg text-[var(--color-muted-foreground)] max-w-xl mx-auto mb-10 leading-relaxed">
+            A simple pipeline to organize applications, parse job descriptions with AI, and see how your resume matches — all in one place.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/login"
-              className="btn-primary w-full sm:w-auto px-8 py-3 flex items-center justify-center gap-2 text-sm"
+              className="btn-primary w-full sm:w-auto px-7 py-2.5 flex items-center justify-center gap-2 text-sm"
               id="hero-cta-btn"
             >
-              Open Application Tracker
+              Get Started Free
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/login"
-              className="btn-secondary w-full sm:w-auto px-8 py-3 text-sm text-center"
+              className="btn-secondary w-full sm:w-auto px-7 py-2.5 text-sm text-center"
             >
-              Sign In with Email
+              Sign In
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Architectural Features Section */}
-      <section className="py-16 px-6 border-b border-[#27272A]">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-12 border-b border-[#27272A] pb-6">
-            <span className="text-xs font-mono text-[#A1A1AA] uppercase tracking-wider block mb-1">
-              Core Capabilities
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#FAFAFA]">
-              Functional Utilities for Candidates
+      {/* Features Section */}
+      <section className="py-20 px-6 border-t border-[var(--color-border)]">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-12 text-center">
+            <p className="text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wider mb-2">
+              What you get
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
+              Everything you need, nothing you don&apos;t
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {/* Feature 1 */}
-            <div className="border border-[#27272A] bg-[#111114] p-6">
-              <div className="w-9 h-9 border border-[#27272A] bg-[#18181B] flex items-center justify-center mb-5 text-[#FAFAFA]">
-                <Cpu className="w-4 h-4" />
+            <div className="card-surface p-6">
+              <div className="w-9 h-9 rounded-lg bg-[var(--color-primary-muted)] flex items-center justify-center mb-4 text-[var(--color-primary)]">
+                <Layers className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-bold text-[#FAFAFA] mb-2 uppercase tracking-wide">
-                Automated JD Extraction
+              <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-1.5">
+                Visual Pipeline
               </h3>
-              <p className="text-sm text-[#A1A1AA] leading-relaxed">
-                Extract job role, technical requirements, salary range, and company info directly from raw job posts into structured records.
+              <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
+                Track applications across stages with an interactive drag-and-drop Kanban board.
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="border border-[#27272A] bg-[#111114] p-6">
-              <div className="w-9 h-9 border border-[#27272A] bg-[#18181B] flex items-center justify-center mb-5 text-[#FAFAFA]">
-                <BarChart2 className="w-4 h-4" />
+            <div className="card-surface p-6">
+              <div className="w-9 h-9 rounded-lg bg-[var(--color-info-muted)] flex items-center justify-center mb-4 text-[var(--color-info)]">
+                <Cpu className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-bold text-[#FAFAFA] mb-2 uppercase tracking-wide">
-                Resume Gap Evaluation
+              <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-1.5">
+                Smart JD Parsing
               </h3>
-              <p className="text-sm text-[#A1A1AA] leading-relaxed">
-                Parse your uploaded PDF resume against application criteria to calculate qualification alignment and highlight missing competencies.
+              <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
+                AI extracts role, skills, salary, and requirements from any job description.
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="border border-[#27272A] bg-[#111114] p-6">
-              <div className="w-9 h-9 border border-[#27272A] bg-[#18181B] flex items-center justify-center mb-5 text-[#FAFAFA]">
-                <Layers className="w-4 h-4" />
+            <div className="card-surface p-6">
+              <div className="w-9 h-9 rounded-lg bg-[var(--color-warning-muted)] flex items-center justify-center mb-4 text-[var(--color-warning)]">
+                <BarChart2 className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-bold text-[#FAFAFA] mb-2 uppercase tracking-wide">
-                Structured Kanban Flow
+              <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-1.5">
+                Resume Matching
               </h3>
-              <p className="text-sm text-[#A1A1AA] leading-relaxed">
-                Organize every submission across five distinct stages: Bookmarked, Applied, Screening, Interview, and Offer with stage history.
+              <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
+                See how your resume aligns with job requirements, with a match score and gap analysis.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pipeline Preview Section */}
-      <section className="py-16 px-6 border-b border-[#27272A] bg-[#09090B]">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#27272A] pb-6">
-            <div>
-              <span className="text-xs font-mono text-[#A1A1AA] uppercase tracking-wider block mb-1">
-                Visual Workflow
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#FAFAFA]">
-                Stage Pipeline Layout
-              </h2>
-            </div>
-            <span className="text-xs font-mono text-[#71717A]">
-              Interactive Five-Stage Architecture
-            </span>
-          </div>
-
-          <div className="border border-[#27272A] bg-[#111114] p-6 overflow-x-auto">
-            <div className="flex gap-4 min-w-[780px]">
-              {[
-                { stage: "BOOKMARKED", count: 3, border: "#71717A", role: "Systems Engineer", comp: "CloudScale Inc" },
-                { stage: "APPLIED", count: 8, border: "#3B82F6", role: "Backend Developer", comp: "Stripe Platform" },
-                { stage: "SCREENING", count: 2, border: "#06B6D4", role: "Platform Architect", comp: "Datadog" },
-                { stage: "INTERVIEW", count: 1, border: "#F59E0B", role: "Full Stack Engineer", comp: "Vercel Labs" },
-                { stage: "OFFER", count: 1, border: "#10B981", role: "Staff Infrastructure", comp: "GitHub Core" },
-              ].map((col, idx) => (
-                <div key={idx} className="flex-1 min-w-[140px]">
-                  <div
-                    className="flex items-center justify-between pb-2 mb-3 border-b"
-                    style={{ borderColor: col.border }}
-                  >
-                    <span className="text-xs font-mono font-bold tracking-wider text-[#A1A1AA]">
-                      {col.stage}
-                    </span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 bg-[#18181B] border border-[#27272A] text-[#FAFAFA]">
-                      {col.count}
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="p-3 border border-[#27272A] bg-[#09090B]">
-                      <div className="text-xs font-semibold text-[#FAFAFA]">{col.role}</div>
-                      <div className="text-[11px] text-[#A1A1AA] mt-1">{col.comp}</div>
-                      <div className="mt-2.5 pt-2 border-t border-[#18181B] flex items-center justify-between text-[10px] font-mono text-[#71717A]">
-                        <span>Match: 92%</span>
-                        <span>Active</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Action Banner */}
-      <section className="py-16 px-6 border-b border-[#27272A]">
-        <div className="max-w-4xl mx-auto border border-[#27272A] bg-[#111114] p-8 sm:p-12 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#FAFAFA] mb-3">
-            Start Tracking Applications
-          </h2>
-          <p className="text-sm text-[#A1A1AA] max-w-xl mx-auto mb-8">
-            Create an account to begin tracking roles, parsing job specifications, and monitoring your application stages.
-          </p>
-          <Link
-            href="/login"
-            className="btn-primary inline-flex items-center gap-2 px-8 py-3 text-sm"
-            id="cta-btn"
-          >
-            Launch Tracker
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="py-10 px-6 bg-[#09090B]">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <JTLogo size={24} />
-            <span className="font-bold text-xs tracking-wider uppercase text-[#FAFAFA]">
+      <footer className="py-8 px-6 border-t border-[var(--color-border)]">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <JTLogo size={20} />
+            <span className="font-semibold text-xs text-[var(--color-foreground)]">
               Job Tracker
             </span>
           </div>
-          <div className="flex items-center gap-6 text-xs font-mono text-[#A1A1AA]">
-            <Link href="/privacy" className="hover:text-[#FAFAFA] transition-colors">
+          <div className="flex items-center gap-6 text-xs text-[var(--color-muted-foreground)]">
+            <Link href="/privacy" className="hover:text-[var(--color-foreground)] transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-[#FAFAFA] transition-colors">
+            <Link href="/terms" className="hover:text-[var(--color-foreground)] transition-colors">
               Terms of Service
             </Link>
-            <Link href="/login" className="hover:text-[#FAFAFA] transition-colors">
+            <Link href="/login" className="hover:text-[var(--color-foreground)] transition-colors">
               Sign In
             </Link>
           </div>
-          <div className="text-xs font-mono text-[#71717A]">
+          <div className="text-xs text-[var(--color-muted)]">
             © 2026 Job Tracker. All rights reserved.
           </div>
         </div>

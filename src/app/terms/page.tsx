@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { JTLogo } from "@/components/layout/JTLogo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export const metadata = {
   title: "Terms of Service | Job Tracker",
@@ -8,41 +9,50 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#FAFAFA]">
-      {/* Top Header */}
-      <header className="border-b border-[#27272A] bg-[#09090B]/90 sticky top-0 z-40 backdrop-blur-none">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] flex flex-col transition-theme">
+      {/* Navbar */}
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface-0)] sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <JTLogo size={28} />
-            <span className="font-bold text-sm tracking-tight uppercase">Job Tracker</span>
+            <span className="font-bold text-sm tracking-tight text-[var(--color-foreground)]">Job Tracker</span>
           </Link>
-          <Link
-            href="/login"
-            className="btn-secondary text-xs px-3.5 py-1.5"
-          >
-            Access Dashboard
-          </Link>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link
+              href="/login"
+              className="text-xs font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/login"
+              className="btn-primary text-xs px-3.5 py-1.5"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="border border-[#27272A] bg-[#111114] p-8 md:p-12">
-          <div className="border-b border-[#27272A] pb-6 mb-8">
-            <span className="text-xs font-mono text-[#A1A1AA] uppercase tracking-wider block mb-2">
-              Legal Documentation: Terms and Conditions
+      <main className="flex-1 max-w-4xl mx-auto px-6 py-12 w-full">
+        <div className="border border-[var(--color-border)] bg-[var(--color-surface-1)] rounded-[6px] p-8 md:p-12 shadow-xs">
+          <div className="border-b border-[var(--color-border)] pb-6 mb-8">
+            <span className="text-xs font-medium text-[var(--color-primary)] uppercase tracking-wider block mb-2">
+              Legal & Terms
             </span>
-            <h1 className="text-3xl font-bold tracking-tight text-[#FAFAFA]">
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
               Terms of Service
             </h1>
-            <p className="text-xs font-mono text-[#71717A] mt-2">
-              Last Updated: March 2026 : Effective Immediately
+            <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
+              Last Updated: March 2026 · Effective Immediately
             </p>
           </div>
 
-          <div className="space-y-8 text-sm text-[#A1A1AA] leading-relaxed">
+          <div className="space-y-8 text-sm text-[var(--color-muted-foreground)] leading-relaxed">
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 1. Acceptance of Terms
               </h2>
               <p>
@@ -51,7 +61,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 2. Description of Service
               </h2>
               <p>
@@ -60,7 +70,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 3. User Account and Responsibilities
               </h2>
               <p>
@@ -69,7 +79,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 4. User Content & Data Ownership
               </h2>
               <p>
@@ -78,7 +88,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 5. Disclaimer: No Guarantee of Outcomes
               </h2>
               <p>
@@ -87,7 +97,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 6. Limitation of Liability
               </h2>
               <p>
@@ -96,38 +106,56 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 7. Modifications to the Service
               </h2>
               <p>
-                We reserve the right to modify, suspend, or discontinue any feature of the Service at any time with or without prior notice.
+                We reserve the right to modify, suspend, or discontinue any feature of the Service at any time with or without notice.
               </p>
             </section>
 
             <section>
-              <h2 className="text-base font-semibold text-[#FAFAFA] mb-3 uppercase tracking-wide">
+              <h2 className="text-base font-semibold text-[var(--color-foreground)] mb-3">
                 8. Contact Information
               </h2>
               <p>
-                For questions regarding these Terms of Service, please contact:
+                For questions regarding these Terms of Service, contact:
               </p>
-              <div className="mt-3 p-4 border border-[#27272A] bg-[#09090B]">
-                <p className="text-[#FAFAFA] font-mono text-xs">Entity: Job Tracker</p>
-                <p className="text-[#FAFAFA] font-mono text-xs mt-1">
+              <div className="mt-3 p-4 border border-[var(--color-border)] bg-[var(--color-surface-0)] rounded-[6px]">
+                <p className="text-[var(--color-foreground)] font-mono text-xs">Entity: Job Tracker</p>
+                <p className="text-[var(--color-foreground)] font-mono text-xs mt-1">
                   Inquiries: support@jobtracker.com
                 </p>
               </div>
             </section>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-[#27272A] flex items-center justify-between text-xs text-[#71717A]">
+          <div className="mt-10 pt-6 border-t border-[var(--color-border)] flex items-center justify-between text-xs text-[var(--color-muted)]">
             <span>© 2026 Job Tracker. All rights reserved.</span>
-            <Link href="/privacy" className="text-[#A1A1AA] hover:text-[#FAFAFA] underline underline-offset-4">
+            <Link href="/privacy" className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] underline underline-offset-4">
               Privacy Policy
             </Link>
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--color-border)] py-8 px-6 bg-[var(--color-surface-0)] text-xs text-[var(--color-muted-foreground)]">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <JTLogo size={20} />
+            <span className="font-semibold text-[var(--color-foreground)]">Job Tracker</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link href="/privacy" className="hover:text-[var(--color-foreground)] transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-[var(--color-foreground)] transition-colors">Terms</Link>
+            <Link href="/login" className="hover:text-[var(--color-foreground)] transition-colors">Sign In</Link>
+          </div>
+          <div>
+            © 2026 Job Tracker. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

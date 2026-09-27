@@ -17,9 +17,9 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://jobtracker.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Job Tracker | Structured Application Pipeline",
+  title: "Job Tracker — Track your job search with clarity",
   description:
-    "Structured kanban pipeline for job applications, automated job description extraction, and resume match scoring.",
+    "Visual kanban pipeline for job applications, AI-powered job description parsing, and resume match scoring. Free and open source.",
   keywords: [
     "job tracker",
     "application tracker",
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
     apple: "/icon.svg",
   },
   openGraph: {
-    title: "Job Tracker | Structured Application Pipeline",
+    title: "Job Tracker — Track your job search with clarity",
     description:
-      "Structured kanban pipeline for job applications, automated job description extraction, and resume match scoring.",
+      "Visual kanban pipeline for job applications, AI-powered job description parsing, and resume match scoring.",
     url: siteUrl,
     siteName: "Job Tracker",
     type: "website",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Job Tracker",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 
@@ -58,7 +58,21 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Inline script to prevent theme flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem('theme');
+                if (t === 'dark') document.documentElement.classList.add('dark');
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>
