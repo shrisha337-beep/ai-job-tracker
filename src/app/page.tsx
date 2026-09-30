@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { JTLogo } from "@/components/layout/JTLogo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Layers, BarChart2, ArrowRight, Cpu } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] antialiased">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] antialiased transition-theme">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-background)]/80 backdrop-blur-sm border-b border-[var(--color-border)]">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -14,7 +15,7 @@ export default function LandingPage() {
               Job Tracker
             </span>
           </Link>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4 sm:gap-5">
             <Link
               href="/privacy"
               className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors hidden sm:block"
@@ -27,6 +28,7 @@ export default function LandingPage() {
             >
               Terms
             </Link>
+            <ThemeToggle />
             <Link
               href="/login"
               className="text-xs font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
@@ -45,7 +47,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-36 pb-24 px-6">
+      <section className="pt-36 pb-24 px-6 border-b border-[var(--color-border)] bg-grid">
         <div className="max-w-3xl mx-auto text-center">
           {/* Status Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-full text-xs text-[var(--color-muted-foreground)] mb-8">
@@ -83,7 +85,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6 border-t border-[var(--color-border)]">
+      <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="mb-12 text-center">
             <p className="text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wider mb-2">

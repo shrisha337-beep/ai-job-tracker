@@ -88,10 +88,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(theme === "light" ? "dark" : "light");
   }, [theme, setTheme]);
 
-  // Prevent flash by not rendering until initialized
-  if (!initialized) {
-    return null;
-  }
+
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
