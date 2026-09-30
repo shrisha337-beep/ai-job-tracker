@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { JTLogo } from "@/components/layout/JTLogo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
@@ -47,7 +48,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-surface-0)] p-4 text-[var(--color-foreground)]">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[var(--color-surface-0)] p-4 text-[var(--color-foreground)] transition-theme">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
