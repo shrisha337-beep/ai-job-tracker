@@ -1,7 +1,7 @@
 # 🏛️ Project Decision & Architecture Record: JobTracker AI
 
-> **Document Version**: 1.0.0  
-> **Last Updated**: September 2026  
+> **Document Version**: 2.0.0  
+> **Last Updated**: October 2026  
 > **Repository**: `ai-job-tracker`  
 > **Author**: Core Development Team  
 
@@ -9,263 +9,410 @@
 
 ## 📌 Executive Summary
 
-**JobTracker AI** is an intelligent, high-performance job application tracking platform designed to eliminate the chaos, manual labor, and uncertainty of the modern job search. 
+**JobTracker AI** is an intelligent, full-stack job application tracking platform that replaces chaotic spreadsheets with a visual Kanban pipeline, AI-powered job description parsing, and resume–JD match scoring. It runs as a modern progressive web application built on Next.js 16, PostgreSQL, Prisma v7, and OpenAI — deployed serverlessly on Vercel with a native Android wrapper via Capacitor.
 
-This document records the exact problems solved, architecture constructed, technology choices justified, technical challenges overcome, library decisions taken, and an exhaustive chronological log of all critical project decisions. It is written in simple, clear, and unambiguous language.
+This document records **every** important decision made during the project: the problems we identified, the solutions we designed, the technologies we chose (and why), the challenges we faced (and how we overcame them), and a chronological log of every critical turning point.
 
 ---
 
-## 1. 🎯 What Problem Did We Solve?
+## 1. 🎯 Problem Statement — What Problem Were We Solving?
 
-Searching for a job in the modern tech ecosystem is painful, disorganized, and opaque. Job seekers face three core problems:
+Searching for a job in the modern tech ecosystem is painful, disorganized, and opaque. We identified three core pain points:
 
-### A. The "Spreadsheet Nightmare" (Disorganized Pipeline)
-- Job seekers typically track 50 to 200+ applications across Google Sheets, Excel, Apple Notes, or email folders.
-- Spreadsheets quickly become outdated, cumbersome to edit on mobile, lack automated status reminders, and do not preserve interview notes, recruiter contacts, or job descriptions when listings expire.
+### A. The "Spreadsheet Nightmare" — Disorganized Pipeline
 
-### B. The "Black Hole" & ATS Rejection Blindness
+- Job seekers typically track 50–200+ applications across Google Sheets, Excel, Apple Notes, or email folders.
+- Spreadsheets quickly become outdated, are hard to edit on mobile, lack automated status transitions, and do not preserve interview notes, recruiter contacts, or full job descriptions (which often expire on portals).
+- There is no visual representation of where a candidate stands across their entire funnel.
+
+### B. The "Black Hole" — ATS Rejection Blindness
+
 - Most corporate job portals use Applicant Tracking Systems (ATS) that parse and rank resumes based on keyword matching and semantic relevance.
-- Applicants apply blindly with generic resumes without knowing if their skills match what the employer actually listed as requirements, leading to high rejection rates and zero feedback.
+- Applicants apply blindly with generic resumes, having no idea whether their skills actually match what the employer listed. This leads to high silent rejection rates and zero feedback.
+- Applicants cannot answer: *"Is my resume failing at screening, or am I making it to interviews but not converting?"*
 
 ### C. Manual Overhead & Time Waste
-- Reading long, repetitive Job Descriptions (JDs), manually copying company names, salary ranges, required technologies, job types (remote/hybrid/onsite), and responsibilities takes hours of manual effort.
-- Applicants lack visibility into their conversion funnel (e.g., *Is my resume failing at the screening round, or am I dropping out at the technical interview?*).
+
+- Reading long, repetitive Job Descriptions (JDs) and manually copying company names, salary ranges, required technologies, job types, and responsibilities takes hours of effort per week.
+- There is no automated way to extract structured data from a raw JD and compare it against a resume.
 
 ---
 
-## 2. 🚀 What Did We Make?
+## 2. 🚀 What Did We Build?
 
-We built **JobTracker AI** — a centralized command center that automates the job search workflow:
+We built **JobTracker AI** — a centralized command center that automates the entire job search workflow:
 
-1. **Interactive Kanban Pipeline**:
-   - A visual 6-stage drag-and-drop board (*Bookmarked → Applied → Screening → Interview → Offer → Rejected*) built with fluid animations and responsive mobile touch support.
-   - A quick-toggle between the Kanban board and a tabular glassmorphic list view with searching, filtering, and sorting.
+### Feature 1: Interactive Kanban Pipeline
+- A visual **6-stage drag-and-drop board**: `Bookmarked → Applied → Screening → Interview → Offer → Rejected`.
+- Cards show role, company, location, salary, match score, and relative timestamp ("3 days ago").
+- A **toggle between Kanban view and tabular List view** with live search, filtering, and sorting.
+- Optimistic UI — dragging a card updates instantly; the backend persists asynchronously.
 
-2. **AI-Powered Job Description Parser**:
-   - Accepts any raw JD text or job listing URL.
-   - Uses OpenAI's `gpt-4o-mini` with structured JSON output mode to instantly extract 12+ structured data fields: company name, role, location, salary range, experience level, job type, required skills, preferred skills, benefits, and responsibilities.
+### Feature 2: AI-Powered Job Description Parser
+- Accepts any raw JD text pasted by the user.
+- Uses **OpenAI `gpt-4o-mini`** with structured JSON output mode to instantly extract 12+ fields: role title, company name, location, salary range, experience level, education requirements, employment type, required skills, preferred skills, responsibilities, company description, and perks/benefits.
+- Parsed data is saved to the `Application` record and auto-fills empty fields (location, salary, job type).
 
-3. **Resume Parsing & Skill Extraction**:
-   - Allows users to upload their resumes in PDF or plain text (TXT) format.
-   - Extracts raw text using pure JavaScript in-memory parsing, detects skills automatically via keyword matching, and maintains an active resume profile.
+### Feature 3: Resume Parsing & Skill Extraction
+- Users upload resumes in **PDF** or **plain text (TXT)** format.
+- Raw text is extracted using `pdf-parse` v1.1.1 (pure JavaScript, zero native dependencies).
+- Skills are detected via **keyword matching** against a curated list of 40+ industry-standard technologies (JavaScript, TypeScript, React, AWS, Docker, etc.).
+- The latest upload becomes the **active resume** automatically.
 
-4. **AI ATS Match Scorer**:
-   - Compares the candidate’s active resume directly against any tracked job description.
-   - Computes an overall match score (0–100%), a letter grade (A–F), lists of matched, missing, and bonus skills, actionable strengths and gaps, ATS keywords to include, and estimated interview likelihood.
+### Feature 4: AI ATS Match Scorer
+- Compares the user's active resume against any tracked job description using OpenAI.
+- Returns: **overall score (0–100%)**, letter grade (A–F), matched skills, missing skills, bonus skills, specific strengths, specific gaps, actionable suggestions, ATS keywords to add, and estimated interview likelihood.
+- Score is persisted to the application and displayed on Kanban cards.
 
-5. **Application Detail Slide-Over**:
-   - A 4-tab slide-out panel allowing in-depth inspection without leaving the board:
-     - **Details**: Editable job parameters (salary, location, type, URL, status).
-     - **Notes**: Timelines, recruiter contact details, and interview preparation notes.
-     - **JD Breakdown**: Clean view of the AI-extracted job requirements.
-     - **ATS Match Score**: Interactive visualization of skill alignment and recommendations.
+### Feature 5: Application Detail Slide-Over Modal
+- A **3-tab modal** with comprehensive application management:
+  - **Details Tab**: Inline-editable fields for status, location, salary, job type, source URL, and notes.
+  - **JD Tab**: Collapsible sections showing parsed JD data (summary, skills, responsibilities, perks) with the ability to paste/edit raw JD text and trigger AI parsing.
+  - **Match Tab**: Full match analysis visualization with collapsible sections (skill comparison, strengths, ATS keywords).
 
-6. **Insights & Analytics Dashboard**:
-   - High-level metric cards: Total Applications, Response Rate, Active Interviews, Offers, and Average Match Score.
-   - Visual charts powered by Recharts showing pipeline status distribution and application velocity over time.
+### Feature 6: Analytics Dashboard
+- **4 stat cards**: Total Applications, Interviews, Offers, Response Rate.
+- **Pipeline Distribution**: Horizontal bar chart showing application counts per stage.
+- **Recent Updates**: Latest 5 applications with status badges and timestamps.
+- **Quick Actions**: Direct links to add applications, open Kanban, upload resume, evaluate match.
 
-7. **Settings & Bring-Your-Own-Key (BYOK)**:
-   - Profile management and the ability for users to supply their own personal OpenAI API key for unlimited AI operations, avoiding centralized rate limits.
+### Feature 7: Settings & Configuration
+- Profile management (display name).
+- **Bring-Your-Own-Key (BYOK)**: Optional user-provided OpenAI API key field.
+- Notification preferences (email alerts, weekly digest).
+- Plan & Usage section with upgrade CTA.
 
-8. **PWA & Mobile Ready**:
-   - Progressive Web App (PWA) manifest and icons for standalone mobile installation.
-   - Native Android wrapper integration using Capacitor.
+### Feature 8: Dual-Theme Design System
+- **Light Mode** (default): White backgrounds, slate gray surfaces, emerald green accents.
+- **Dark Mode**: Near-black backgrounds, dark slate surfaces, teal/cyan accents.
+- Theme synced across **three layers**: DOM class (`.dark`), `localStorage`, and database (`User.theme`).
+- **Flash prevention**: Inline `<script>` in `<head>` reads `localStorage` before React hydrates.
 
-9. **Architectural Precision UI**:
-   - A high-contrast, dark-mode design system featuring monochrome slate tones, sharp geometry, technical monospace accents, and micro-interactions.
+### Feature 9: PWA & Mobile Ready
+- Progressive Web App manifest with icons for standalone mobile installation.
+- **Capacitor Android wrapper** (`@capacitor/android`) for native Android deployment from the same codebase.
+
+### Feature 10: Legal Pages
+- Dedicated **Privacy Policy** and **Terms of Service** pages with consistent navbar design.
 
 ---
 
-## 3. 🛠️ What Tech Stack Did We Use?
+## 3. 🛠️ Complete Tech Stack
 
 | Layer | Technology | Version / Specifics |
 |---|---|---|
-| **Frontend & Backend Framework** | Next.js | v16 (App Router, Turbopack) |
-| **Language** | TypeScript | v5 |
+| **Frontend & Backend Framework** | Next.js | v16.2.7 (App Router, React Server Components, Turbopack) |
+| **Language** | TypeScript | v5 (Strict mode enabled) |
+| **React** | React | v19.2.4 |
 | **Database** | PostgreSQL | Hosted on [Neon](https://neon.tech) (Serverless Postgres) |
-| **Database ORM** | Prisma | v7 with `@prisma/adapter-pg` driver adapter |
-| **Authentication** | NextAuth.js | v4 (Google OAuth + Demo Credentials) |
-| **Artificial Intelligence** | OpenAI API | `gpt-4o-mini` with Structured Outputs (`json_object`) |
-| **Styling & Design System** | Tailwind CSS + Custom CSS | v4 with `@theme inline` tokens |
-| **Drag & Drop** | `@dnd-kit` | `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` |
-| **Data Visualization** | Recharts | v3 (Responsive Container, Bar & Pie Charts) |
-| **PDF Extraction** | `pdf-parse` | v1.1.1 (Pure JavaScript) |
-| **Icons** | Lucide React | v1.17 |
-| **Client State Management** | Zustand & TanStack Query | Zustand v5 + `@tanstack/react-query` v5 |
-| **Mobile & PWA** | Web Manifest + Capacitor | Manifest v3 + `@capacitor/core` & `@capacitor/android` |
+| **Database ORM** | Prisma | v7.8.0 with `@prisma/adapter-pg` driver adapter |
+| **Database Connection** | `pg` (node-postgres) | v8.21.0 — Pooled connection via `Pool` |
+| **Authentication** | NextAuth.js | v4.24.14 (Google OAuth + Demo Credentials provider) |
+| **Auth Adapter** | `@auth/prisma-adapter` | v2.11.2 — Bridges NextAuth ↔ Prisma ↔ PostgreSQL |
+| **Artificial Intelligence** | OpenAI API | `gpt-4o-mini` with Structured JSON Outputs (`response_format: json_object`) |
+| **Styling** | Tailwind CSS v4 + Custom CSS Design System | `@theme inline` tokens, CSS custom properties, `60/30/10` color architecture |
+| **CSS Processing** | `@tailwindcss/postcss` | v4 — PostCSS plugin for Tailwind v4 |
+| **Drag & Drop** | `@dnd-kit` | `@dnd-kit/core` v6.3.1, `@dnd-kit/sortable` v10.0.0, `@dnd-kit/utilities` v3.2.2 |
+| **Data Visualization** | Recharts | v3.8.1 (Responsive Container, BarChart, PieChart) |
+| **PDF Extraction** | `pdf-parse` | v1.1.1 (Pure JavaScript, zero native deps) |
+| **Icons** | Lucide React | v1.17.0 (Tree-shakeable SVG icons) |
+| **HTTP Client** | Axios | v1.17.0 |
+| **Date Utilities** | date-fns | v4.4.0 (`formatDistanceToNow`) |
+| **Conditional CSS** | clsx | v2.1.1 |
+| **Client State** | Zustand | v5.0.14 |
+| **Server State** | `@tanstack/react-query` | v5.101.0 |
+| **Mobile Wrapper** | Capacitor | `@capacitor/core` v8.4.0, `@capacitor/android` v8.4.0, `@capacitor/cli` v8.4.0 |
+| **Environment Variables** | dotenv | v17.4.2 (for Prisma CLI `.env.local` loading) |
+| **Cross-platform Scripts** | cross-env | v10.1.0 |
 | **Hosting & Deployment** | Vercel | Serverless Edge-ready platform |
 
 ---
 
-## 4. 💡 Why Did We Use That Particular Tech Stack Only?
+## 4. 💡 Why This Tech Stack? — Every Decision Justified
 
-Every single technology was chosen deliberately over common alternatives to guarantee maximum performance, reliability, and developer velocity:
+### Decision: Next.js 16 (App Router) — *not* separate React + Express
 
-### Why Next.js 16 (App Router)?
-- **Alternative considered**: Separate React (Vite) frontend + Node/Express backend.
-- **Why Next.js**: 
-  - Having frontend pages and backend API routes in a single unified codebase drastically simplifies deployments on Vercel.
-  - Next.js App Router allows server-side operations (like database queries and OpenAI API key security) while delivering interactive client components for the Kanban board.
-  - Turbopack provides near-instant Hot Module Reloading (HMR) and fast build times.
+| Factor | Next.js 16 | React + Express (rejected) |
+|---|---|---|
+| **Codebase** | Single repo for frontend + API | Two repos, two deployments, two CI pipelines |
+| **Server Components** | Database queries run server-side, no API call needed for initial page loads | Every data fetch requires a REST round-trip |
+| **Deployment** | One-click Vercel deploy | Needs separate frontend hosting + backend hosting |
+| **HMR Speed** | Turbopack: near-instant | Vite: fast but separate server |
 
-### Why TypeScript?
-- **Alternative considered**: Plain JavaScript.
-- **Why TypeScript**: 
-  - An application handling complex nested JSON (parsed job descriptions, ATS match analysis, and database records) quickly becomes buggy without strict types.
-  - TypeScript guarantees that changes to database models immediately flag errors across UI components and API endpoints before reaching production.
+**Verdict**: A job tracker is a classic full-stack CRUD app. Next.js App Router lets us write server-side data fetching (`getRequiredSession()` + `prisma.application.findMany()`) in the same file as the React page component, eliminating unnecessary API calls for initial loads while still providing API routes for client-side mutations.
 
-### Why PostgreSQL on Neon?
-- **Alternative considered**: MongoDB, Supabase, or self-hosted PostgreSQL.
-- **Why Neon**: 
-  - **Relational Integrity**: Job applications, users, resumes, and accounts are fundamentally relational. Relational foreign keys and cascading deletes (`onDelete: Cascade`) ensure zero orphaned records.
-  - **Serverless-Native**: Neon spins down compute during inactivity to stay within free limits and scales instantly when traffic arrives.
-  - **Connection Pooling**: Neon includes built-in connection pooling (PgBouncer), preventing the "exhausted database connections" problem typical of serverless functions.
+### Decision: TypeScript — *not* plain JavaScript
 
-### Why Prisma v7?
-- **Alternative considered**: Drizzle ORM, TypeORM, or raw SQL (`pg`).
-- **Why Prisma**: 
-  - Provides a single declarative schema file (`prisma/schema.prisma`) that acts as the single source of truth.
-  - Auto-generates fully typed query clients.
-  - Prisma v7 introduces lightweight driver adapters (`@prisma/adapter-pg`) that reduce bundle sizes and improve query latency on serverless edge environments.
+An application handling deeply nested JSON structures (parsed JD with 12+ fields, match analysis with 10+ fields, Prisma models with nullable fields) would be **unmanageable** in plain JS. TypeScript catches type mismatches at compile time — for example, if we add a new field to `ParsedJD`, every consumer is immediately flagged.
 
-### Why OpenAI `gpt-4o-mini` with Structured Outputs?
-- **Alternatives considered**: Local models (Ollama), `gpt-4o`, or Claude 3.5 Sonnet.
-- **Why `gpt-4o-mini`**:
-  - **Cost-Efficiency**: It is ~90% cheaper than flagship models, making AI parsing affordable for high-volume usage.
-  - **Speed**: Typical response latency is under 1.5 seconds, keeping the UI snappy.
-  - **Structured JSON Mode**: Using `response_format: { type: "json_object" }` guarantees that the output strictly adheres to JSON format, preventing JSON parsing errors in backend routes.
+### Decision: PostgreSQL on Neon — *not* MongoDB, Supabase, or SQLite
 
-### Why `@dnd-kit` instead of `react-beautiful-dnd`?
-- **Alternative considered**: `react-beautiful-dnd` or HTML5 native drag-and-drop.
-- **Why `@dnd-kit`**:
-  - `react-beautiful-dnd` is deprecated by Atlassian and suffers from severe compatibility issues in React 18 and 19.
-  - `@dnd-kit` is lightweight, modular, actively maintained, and provides first-class touch screen support for mobile and tablet users.
+- **Relational Integrity**: Users → Applications → Resumes are fundamentally relational entities. `onDelete: Cascade` ensures zero orphaned records when a user is deleted.
+- **Serverless-Native**: Neon auto-suspends compute during inactivity (free tier friendly) and scales transparently.
+- **Built-in Connection Pooling**: Neon includes PgBouncer, preventing the "too many connections" problem that kills serverless functions.
+- **PostgreSQL `TEXT` columns**: Store arbitrarily long JD text and resume content without the 16MB document limit of MongoDB.
 
-### Why `pdf-parse` v1.1.1 (Pure JS)?
-- **Alternatives considered**: `pdf2json`, `pdf-parse` v2, or cloud OCR APIs (AWS Textract, Google Document AI).
-- **Why `pdf-parse` v1.1.1**:
-  - Cloud OCR APIs add external latency, per-page costs, and complex credential management.
-  - `pdf-parse` v1.1.1 runs 100% in Node.js memory with zero native system dependencies (unlike libraries requiring C++ Cairo or Python bindings), making it fully compatible with Vercel serverless functions.
+### Decision: Prisma v7 with Driver Adapter — *not* Drizzle, TypeORM, or raw SQL
+
+- **Single source of truth**: `schema.prisma` defines the entire database schema, generates TypeScript types, and runs migrations.
+- **Type-safe queries**: `prisma.application.findMany({ where: { userId, status } })` is fully typed — no string SQL injection risk.
+- **Driver Adapter**: Prisma v7's `@prisma/adapter-pg` uses the `pg` Pool directly, which works properly in serverless environments (unlike Prisma's legacy binary engine).
+
+### Decision: NextAuth v4 with JWT Strategy — *not* Auth0, Clerk, or Firebase Auth
+
+- **Zero vendor lock-in**: NextAuth is open-source and stores all auth data in our own PostgreSQL via `@auth/prisma-adapter`.
+- **JWT Strategy**: Chosen over database sessions because serverless functions are stateless — JWT tokens are self-contained and don't require a database lookup on every request.
+- **Dual Providers**: Google OAuth for production users + Credentials provider for demo/testing (email-only login, auto-creates accounts).
+
+### Decision: OpenAI `gpt-4o-mini` with Structured JSON — *not* local models or `gpt-4o`
+
+- **Cost**: `gpt-4o-mini` is ~90% cheaper than `gpt-4o`. For a free-tier app parsing hundreds of JDs, cost matters.
+- **Speed**: Typical response in <1.5 seconds. Users won't wait 10+ seconds for a local Ollama model.
+- **`response_format: json_object`**: Guarantees valid JSON output. Without this, LLMs occasionally produce markdown-wrapped JSON or invalid escaping, crashing `JSON.parse()`.
+- **Temperature tuning**: `0.1` for JD parsing (deterministic extraction), `0.2` for match scoring (slight creative latitude for suggestions).
+
+### Decision: `@dnd-kit` — *not* `react-beautiful-dnd`
+
+- `react-beautiful-dnd` is **deprecated** by Atlassian and has severe compatibility issues with React 18+ concurrent features.
+- `@dnd-kit` is modular (we only import `core`, `sortable`, `utilities`), actively maintained, and provides first-class **touch/pointer support** for mobile Kanban interaction.
+- `PointerSensor` with `activationConstraint: { distance: 8 }` prevents accidental drags when users simply click a card.
+
+### Decision: `pdf-parse` v1.1.1 — *not* v2, `pdf2json`, or cloud OCR
+
+- `pdf-parse` v2 requires native C++ binaries (`@napi-rs/canvas`) that **do not exist** in Vercel's serverless runtime.
+- Cloud OCR (AWS Textract, Google Document AI) adds external latency, per-page costs, and credential complexity.
+- v1.1.1 is pure JavaScript — runs in any Node.js environment with zero system dependencies.
+
+### Decision: Tailwind CSS v4 with `@theme inline` — *not* CSS Modules or component libraries
+
+- **Tailwind v4**: New CSS-first configuration via `@theme inline` eliminates `tailwind.config.js` entirely. Design tokens live in CSS alongside their consumers.
+- **Custom CSS properties** (`--color-background`, `--color-primary`, etc.): Enable seamless light/dark theme switching by redefining variables under `.dark`.
+- **No component library** (MUI, Ant Design, Chakra): These add 200KB+ to the bundle and impose their own design language. Our design system is 16KB of hand-crafted CSS with precise editorial aesthetics.
+
+### Decision: `date-fns` — *not* Moment.js or Day.js
+
+- `date-fns` is tree-shakeable — we only import `formatDistanceToNow`, keeping the bundle tiny.
+- Moment.js is deprecated and ships its entire locale database (~300KB).
+
+### Decision: Lucide React — *not* Heroicons, FontAwesome, or Material Icons
+
+- Tree-shakeable: Only imported icons are bundled (e.g., `LayoutDashboard`, `Kanban`, `FileText`).
+- Clean, consistent 24px stroke design that matches our editorial aesthetic.
+- TypeScript-first with proper React component types.
 
 ---
 
-## 5. 🧭 What Approach We Took?
+## 5. 🧭 Approach — How Did We Build It?
 
-We adopted an **"Optimistic, User-Centric, Resilient Pipeline"** approach:
+### Architectural Pattern: Server-First with Client Islands
 
-1. **User Data Isolation**:
-   - Every single database read, update, or delete strictly verifies the authenticated session user ID (`session.user.id`). No user can ever see or modify another user's job applications.
+```
+┌─────────────────────────────────────────────────────┐
+│  Next.js App Router                                  │
+│  ┌──────────────────┐  ┌──────────────────────────┐ │
+│  │ Server Components │  │ Client Components ("use  │ │
+│  │ (Data Fetching)   │  │  client")                │ │
+│  │ • dashboard/page  │  │ • KanbanBoard            │ │
+│  │ • applications/   │  │ • ApplicationDetailModal │ │
+│  │   page            │  │ • ThemeProvider          │ │
+│  │ • getRequired-    │  │ • AddApplicationModal    │ │
+│  │   Session()       │  │ • DashboardClient        │ │
+│  └──────────────────┘  └──────────────────────────┘ │
+│                                                      │
+│  API Routes (Serverless Functions)                   │
+│  ┌──────────────────────────────────────────────────┐│
+│  │ /api/applications     → CRUD                     ││
+│  │ /api/applications/[id]→ GET/PATCH/DELETE          ││
+│  │ /api/ai/parse-jd      → OpenAI JD extraction     ││
+│  │ /api/ai/match-score   → OpenAI resume matching   ││
+│  │ /api/resume           → PDF upload + skill parse  ││
+│  │ /api/user/theme       → Theme CRUD               ││
+│  │ /api/auth/[...next]   → NextAuth handlers        ││
+│  └──────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────┐    ┌──────────────────┐
+│ PostgreSQL      │    │ OpenAI API       │
+│ (Neon Serverless│    │ (gpt-4o-mini)    │
+│  + Prisma v7)   │    │                  │
+└─────────────────┘    └──────────────────┘
+```
 
-2. **Decoupled AI Processing**:
-   - The user can add a job application immediately with basic details (role and company).
-   - JD parsing and resume match scoring can be triggered on-demand or during creation. If the AI service is slow or down, the user's manual tracking experience is never blocked.
+### Design Principles Applied
 
-3. **Client-Side Optimistic UI**:
-   - When a card is dragged from *Applied* to *Interview*, the UI updates immediately. The network request to persist the new status to PostgreSQL happens in the background. If the network fails, the user is alerted.
+1. **User Data Isolation**: Every database query includes `userId: session.user.id` in the `WHERE` clause. No user can ever read, update, or delete another user's data.
 
-4. **Bring-Your-Own-Key (BYOK) Architecture**:
-   - We implemented optional user-provided API keys in settings. If provided, the backend prefers the user's key; otherwise, it falls back to the system's default key.
+2. **Decoupled AI Processing**: AI features (JD parsing, match scoring) are triggered on-demand, not during application creation. If OpenAI is down, users can still track jobs manually.
 
-5. **Pure-Code Architectural Design System**:
-   - Rather than relying on heavy component libraries (like full Material UI or Ant Design) that bloat bundles and look generic, we crafted custom, lightweight components styled with Tailwind CSS tokens.
+3. **Optimistic UI**: When dragging a Kanban card, the UI updates immediately via `setApplications()`. The `PATCH /api/applications/:id` call runs in a `useTransition`. On failure, the card reverts to its original column.
+
+4. **Server-Side Data Fetching for Initial Loads**: Pages like `/dashboard` and `/applications` use React Server Components to query Prisma directly — no API round-trip for the initial page render.
+
+5. **Client-Side Mutations for Interactivity**: All user-initiated mutations (add, edit, delete, drag-drop, AI triggers) go through `fetch()` calls to API routes, keeping the UI interactive.
+
+6. **Three-Layer Theme Sync**:
+   - **Layer 1**: Inline `<script>` in `<head>` reads `localStorage` before paint (prevents flash).
+   - **Layer 2**: React `ThemeProvider` manages state with `useContext`.
+   - **Layer 3**: `PATCH /api/user/theme` persists preference to database for cross-device sync.
 
 ---
 
 ## 6. 🤔 Why This Approach?
 
-1. **Zero Downtime / Zero Frustration**: Job seekers need quick action. If adding an application was blocked by a slow AI parsing job, users would abandon the platform. Decoupling makes the app feel instant.
-2. **Infinite Scalability on Free/Low-Cost Infrastructure**: By utilizing serverless Next.js on Vercel, serverless Postgres on Neon, and low-cost `gpt-4o-mini`, the application can serve thousands of users at near-zero hosting costs.
-3. **Privacy and Safety**: Processing resumes in memory without saving raw files to third-party file buckets protects sensitive personal candidate data.
+1. **Zero Frustration**: Job seekers need instant action. If adding an application was blocked by slow AI parsing, users would abandon the platform. Decoupled AI keeps the core experience instant.
+
+2. **Scalable on Free Infrastructure**: Serverless Next.js on Vercel + serverless Postgres on Neon + low-cost `gpt-4o-mini` = thousands of users at near-zero hosting cost.
+
+3. **Privacy by Design**: Resumes are processed in-memory (Node.js buffer → text extraction → database). Raw PDF files are never saved to file storage or third-party buckets.
+
+4. **Mobile-First Responsive**: The sidebar collapses, the Kanban scrolls horizontally, modals are full-screen on mobile, and Capacitor wraps it for native Android.
 
 ---
 
 ## 7. 🧗 Challenges Faced & How We Overcame Them
 
-During development, we encountered and solved several tricky engineering bottlenecks:
-
 ### Challenge 1: PostgreSQL UTF-8 Null Byte Crash (`\u0000`)
-- **The Issue**: When users uploaded certain PDF resumes, the backend crashed with a PostgreSQL error: `unsupported Unicode escape sequence \u0000`.
-- **Root Cause**: Many PDF generators embed binary font tables that, when converted to text strings, produce ASCII null bytes (`\u0000`). PostgreSQL strictly disallows null bytes in `TEXT` columns.
-- **The Fix**: Added string sanitization in [`src/app/api/resume/route.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/app/api/resume/route.ts):
+
+- **Symptom**: Uploading certain PDF resumes crashed the API with: `unsupported Unicode escape sequence \u0000`.
+- **Root Cause**: Many PDF generators embed binary font tables that produce null bytes when converted to text. PostgreSQL strictly disallows `\u0000` in `TEXT` columns.
+- **Fix**: Added sanitization in [`resume/route.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/app/api/resume/route.ts):
   ```typescript
   rawText = rawText.replace(/\u0000/g, "");
   ```
-  This cleanly strips all null bytes before the text is written to the database.
+- **Impact**: 100% crash-free PDF storage.
 
----
+### Challenge 2: Vercel Serverless Crash with `pdf-parse` v2
 
-### Challenge 2: Vercel Serverless Deployment Crash with `pdf-parse` v2
-- **The Issue**: Resume uploads worked fine in local development, but failed with a 500 error when deployed to Vercel.
-- **Root Cause**: Newer versions of `pdf-parse` (v2) attempt to load native C++ bindings for Canvas (`@napi-rs/canvas`) and Node DOM elements. Serverless execution environments like AWS Lambda / Vercel do not have these system binaries installed.
-- **The Fix**:
-  1. Downgraded `pdf-parse` to pure-JavaScript version `1.1.1`.
-  2. Configured [`next.config.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/next.config.ts) with `serverExternalPackages: ["pdf-parse", "pdfjs-dist", "@napi-rs/canvas"]` to prevent Next.js bundler from trying to package serverless-incompatible binaries.
+- **Symptom**: Resume uploads worked locally but failed with 500 errors on Vercel.
+- **Root Cause**: `pdf-parse` v2 attempts to load native C++ binaries (`@napi-rs/canvas`) for Canvas rendering. Vercel's serverless runtime (AWS Lambda) does not have these system libraries.
+- **Fix**:
+  1. Pinned `pdf-parse` to **v1.1.1** (pure JavaScript, zero native deps).
+  2. Added `serverExternalPackages: ["pdf-parse", "pdfjs-dist", "@napi-rs/canvas"]` to [`next.config.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/next.config.ts) to prevent the bundler from trying to inline incompatible binaries.
+- **Impact**: Reliable PDF parsing in any cloud runtime.
 
----
+### Challenge 3: Prisma v7 Driver Adapter Requirement
 
-### Challenge 3: Prisma v7 Database Driver Adapter Requirements
-- **The Issue**: Standard Prisma client initialization failed in Next.js 16 with connection validation errors.
-- **Root Cause**: Prisma v7 changed its connection engine architecture. In serverless environments, it requires an explicit driver adapter (`@prisma/adapter-pg`) connected to a PostgreSQL connection pool.
-- **The Fix**:
-  1. Configured `@prisma/adapter-pg` using a pooled `pg.Pool` connection inside [`src/lib/prisma.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/lib/prisma.ts).
-  2. Configured [`prisma.config.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/prisma.config.ts) with `dotenv` to ensure migrations and the CLI can read `.env.local`.
+- **Symptom**: Standard `new PrismaClient()` failed with connection validation errors in Next.js 16 serverless functions.
+- **Root Cause**: Prisma v7 changed its connection engine. In serverless environments, it now requires an explicit driver adapter connected to a `pg.Pool`.
+- **Fix**: Configured [`prisma.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/lib/prisma.ts) with:
+  ```typescript
+  const { PrismaPg } = require("@prisma/adapter-pg");
+  const { Pool } = require("pg");
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({ adapter });
+  ```
+- **Additional Fix**: Created [`prisma.config.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/prisma.config.ts) with `dotenv` to load `.env.local` for CLI commands (migrations, studio).
 
----
+### Challenge 4: NextAuth `<SessionProvider>` Context Error in App Router
 
-### Challenge 4: NextAuth Session Provider Context Missing
-- **The Issue**: Components calling `useSession()` crashed on client navigation with context error: `[next-auth]: useSession must be wrapped in a <SessionProvider>`.
-- **Root Cause**: In Next.js App Router, the root layout is a Server Component, so `<SessionProvider>` cannot wrap `<html>` directly without a client boundary.
-- **The Fix**: Created a dedicated client component [`src/app/providers.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/app/providers.tsx) that encapsulates both `SessionProvider` and `QueryClientProvider`, cleanly wrapping all children.
+- **Symptom**: Components using `useSession()` crashed with: `useSession must be wrapped in a <SessionProvider>`.
+- **Root Cause**: Next.js App Router's root layout is a Server Component. `<SessionProvider>` is a client component and cannot directly wrap `<html>` without a client boundary.
+- **Fix**: Created [`providers.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/app/providers.tsx) — a `"use client"` component that wraps children in `<SessionProvider>` + `<ThemeProvider>`. The root layout imports this as its sole client boundary.
 
----
+### Challenge 5: Missing Prisma Client During Vercel Build
 
-### Challenge 5: Missing Prisma Client during Vercel Build
-- **The Issue**: Vercel deployment builds failed during TypeScript compilation with `Cannot find module '@prisma/client'`.
-- **Root Cause**: Next.js compile step runs before the Prisma schema has been generated into `node_modules/.prisma`.
-- **The Fix**: Updated the `"build"` script in [`package.json`](file:///e:/AI%20Job%20tracker/ai-job-tracker/package.json):
+- **Symptom**: Vercel deployment failed with `Cannot find module '@prisma/client'`.
+- **Root Cause**: TypeScript compilation runs before Prisma generates its client into `node_modules/.prisma`.
+- **Fix**: Updated the `"build"` script in [`package.json`](file:///e:/AI%20Job%20tracker/ai-job-tracker/package.json):
   ```json
   "build": "npx prisma generate && next build"
   ```
-  This guarantees the Prisma Client is always up to date prior to TypeScript verification.
+
+### Challenge 6: Theme Flash on Page Load (FOUC)
+
+- **Symptom**: Users on dark mode saw a brief white flash before React hydrated and applied the dark theme.
+- **Root Cause**: React's `useEffect` in `ThemeProvider` runs after paint. By the time it reads `localStorage` and adds the `.dark` class, the user has already seen the light-mode default.
+- **Fix**: Added an inline `<script>` in [`layout.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/app/layout.tsx) `<head>` that executes before any rendering:
+  ```javascript
+  try {
+    const t = localStorage.getItem('theme');
+    if (t === 'dark') document.documentElement.classList.add('dark');
+  } catch(e) {}
+  ```
+
+### Challenge 7: Hydration Mismatch on ThemeToggle Icon
+
+- **Symptom**: React warned about hydration mismatch because the server rendered a `<Moon>` icon but the client rendered `<Sun>` (or vice versa).
+- **Root Cause**: The server doesn't know the user's theme preference (stored in `localStorage`). The icon depends on client-side state.
+- **Fix**: [`ThemeToggle.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/components/layout/ThemeToggle.tsx) uses a `mounted` state set in `useEffect`. Before mount, it renders a blank `<span>` placeholder, avoiding the mismatch.
+
+### Challenge 8: Accidental Drag When Clicking Kanban Cards
+
+- **Symptom**: Users trying to click a card to open details accidentally started a drag operation.
+- **Root Cause**: `PointerSensor` activated on the first pixel of movement.
+- **Fix**: Configured `activationConstraint: { distance: 8 }` in [`KanbanBoard.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/components/kanban/KanbanBoard.tsx), requiring 8px of intentional movement before drag activates.
 
 ---
 
-## 8. 📦 Why Particular Libraries & Modules Were Used
+## 8. 📦 Library & Module Decision Matrix
 
-| Library / Module | Purpose in Project | Specific Reason for Choosing It |
+| Library / Module | Purpose in Project | Why This Specific Library |
 |---|---|---|
-| `@dnd-kit/core` & `@dnd-kit/sortable` | Kanban drag-and-drop | Modern React 19 support, superior touch gestures on mobile, zero lag. |
-| `recharts` | Dashboard analytics | Declarative SVG charting that easily inherits custom CSS colors. |
-| `lucide-react` | System iconography | Clean, tree-shakeable icons matching the brutalist monospace aesthetic. |
-| `zustand` | Lightweight UI state | Smallest state library (~1KB), zero provider hell, perfect for modal and filter state. |
-| `@tanstack/react-query` | Server state management | Handles automatic cache invalidation and background refetching for job lists. |
-| `clsx` & `tailwind-merge` | Conditional CSS classes | Clean, conflict-free dynamic styling. |
-| `@auth/prisma-adapter` | NextAuth Prisma bridge | Automatically persists OAuth accounts, sessions, and users to Postgres. |
-| `date-fns` | Date calculations | Modular date formatting (*e.g., "Applied 3 days ago"*) without Moment.js bloat. |
+| **`next` v16.2.7** | Full-stack framework | App Router + RSC + Turbopack = single-repo with server-side data + client interactivity |
+| **`react` v19.2.4** | UI rendering | Latest stable; required by Next.js 16 |
+| **`@prisma/client` v7.8.0** | Database ORM | Type-safe queries, declarative schema, auto-generated types |
+| **`@prisma/adapter-pg` v7.8.0** | Serverless DB connection | Required by Prisma v7 for connection pooling in serverless |
+| **`pg` v8.21.0** | PostgreSQL driver | Direct `Pool` connection for the Prisma adapter |
+| **`next-auth` v4.24.14** | Authentication | Open-source, stores in our DB, supports Google OAuth + credentials |
+| **`@auth/prisma-adapter` v2.11.2** | Auth ↔ DB bridge | Auto-persists OAuth accounts, sessions, users to PostgreSQL |
+| **`@dnd-kit/core` v6.3.1** | Kanban drag-and-drop | React 19 compatible, touch support, modular, actively maintained |
+| **`@dnd-kit/sortable` v10.0.0** | Sortable cards in columns | Vertical list sorting strategy for cards within each Kanban column |
+| **`@dnd-kit/utilities` v3.2.2** | CSS transform helpers | `CSS.Transform.toString()` for smooth drag overlay positioning |
+| **`pdf-parse` v1.1.1** | PDF text extraction | Pure JS, zero native deps, works in Vercel serverless |
+| **`recharts` v3.8.1** | Dashboard charts | Declarative SVG charting, inherits CSS custom properties |
+| **`lucide-react` v1.17.0** | Icon system | Tree-shakeable, consistent 24px stroke, TypeScript-first |
+| **`zustand` v5.0.14** | Lightweight client state | ~1KB, no provider wrapping, perfect for modal/filter toggles |
+| **`@tanstack/react-query` v5.101.0** | Server state & caching | Auto cache invalidation, background refetching, stale-while-revalidate |
+| **`axios` v1.17.0** | HTTP client | Interceptors, automatic JSON transforms, cleaner API than fetch |
+| **`date-fns` v4.4.0** | Date formatting | `formatDistanceToNow("3 days ago")` — tree-shakeable, no Moment.js bloat |
+| **`clsx` v2.1.1** | Conditional CSS classes | Clean `clsx("base", isActive && "active")` pattern |
+| **`@capacitor/core` v8.4.0** | Mobile wrapper | Wraps the web app as a native Android app without rewriting |
+| **`dotenv` v17.4.2** | Env variable loading | Loads `.env.local` for Prisma CLI commands (migrations, studio) |
+| **`tailwindcss` v4** | Utility-first CSS | `@theme inline` for CSS-native design tokens, zero config file |
 
 ---
 
 ## 9. 📜 Chronological Decision Log
 
-| Date | Decision Taken | Rationale & Context | Outcome |
-|---|---|---|---|
-| **2026-06-09** | Adopt Next.js 16 + PostgreSQL + Prisma v7 | Needed a modern, scalable full-stack foundation with strong type safety. | Clean single-repo architecture. |
-| **2026-06-09** | Build 6-stage Kanban board with `@dnd-kit` | Job seekers think in visual stages; `@dnd-kit` provides smooth mobile and desktop drag-and-drop. | Intuitive, responsive pipeline board. |
-| **2026-06-09** | Use OpenAI `gpt-4o-mini` with JSON output mode | Needed rapid, reliable parsing of unstructured JDs without hallucinations or broken JSON. | 12+ structured fields extracted in <2s. |
-| **2026-06-09** | Switch to `@prisma/adapter-pg` driver adapter | Prisma v7 constructor threw errors without an explicit adapter for connection pooling. | Stable serverless connection pooling on Neon. |
-| **2026-06-13** | Add `prisma generate` to the `"build"` script | Prevented Vercel build failures where TypeScript compiled before Prisma generated its client. | Seamless zero-config deployments. |
-| **2026-06-15** | Strip null bytes (`\u0000`) from parsed PDF text | PostgreSQL strictly rejects null bytes in UTF-8 text columns. | 100% crash-free PDF storage in database. |
-| **2026-06-18** | Downgrade to `pdf-parse` v1.1.1 & externalize packages | Native C++ bindings in newer versions caused 500 crashes on Vercel serverless. | Lightweight, pure-JS parsing that works in any cloud runtime. |
-| **2026-06-18** | Configure PWA Manifest and Capacitor Android wrapper | Allowed users to install the tracker on phones as an app without separate mobile codebases. | Single codebase deployed to web and mobile. |
-| **2026-09-21** | Refresh to "Architectural Precision" Design System | High-contrast monochrome slate and sharp geometry gives the app a professional, serious command-center feel. | Premium user experience. |
-| **2026-09-23** | **Remove Prototype Chat & Automation Infrastructure** | The initial chat drawer and mock n8n automation were identified as requiring a complete, ground-up redesign. Removed cleanly to allow thoughtful replanning. | Clean codebase ready for proper automation architecture. |
+| # | Date | Decision | Rationale | Outcome |
+|---|---|---|---|---|
+| 1 | **2026-06-09** | Adopt Next.js 16 + PostgreSQL + Prisma v7 as foundation | Needed modern, scalable full-stack architecture with type safety | Clean single-repo with server components + API routes |
+| 2 | **2026-06-09** | Build 6-stage Kanban board with `@dnd-kit` | Job seekers think visually; `react-beautiful-dnd` is deprecated | Intuitive drag-and-drop pipeline with mobile touch support |
+| 3 | **2026-06-09** | Use OpenAI `gpt-4o-mini` with `json_object` mode | Need fast, cheap, reliable structured data extraction | 12+ fields parsed from JD in <2 seconds |
+| 4 | **2026-06-09** | Choose Neon serverless PostgreSQL | Free tier with auto-suspend, built-in connection pooling | Zero-cost hosting during development, scales for production |
+| 5 | **2026-06-09** | Implement Google OAuth + email-only Credentials provider | Google OAuth for production; Credentials for easy demo access | Dual login paths, auto-account creation for demo |
+| 6 | **2026-06-09** | Use JWT session strategy (not database sessions) | Serverless functions are stateless — JWT avoids DB lookup per request | Faster auth checks, no session table overhead |
+| 7 | **2026-06-09** | Switch to `@prisma/adapter-pg` driver adapter | Prisma v7 constructor threw errors without explicit adapter | Stable serverless connection pooling via `pg.Pool` |
+| 8 | **2026-06-13** | Add `prisma generate` to `"build"` script | Vercel build failed because TypeScript compiled before Prisma generated | Seamless zero-config deployments |
+| 9 | **2026-06-15** | Strip null bytes (`\u0000`) from parsed PDF text | PostgreSQL rejects null bytes in UTF-8 `TEXT` columns | 100% crash-free PDF storage |
+| 10 | **2026-06-18** | Downgrade to `pdf-parse` v1.1.1 | v2's native C++ bindings crash on Vercel serverless | Pure-JS parsing works everywhere |
+| 11 | **2026-06-18** | Add `serverExternalPackages` to `next.config.ts` | Prevent Next.js bundler from inlining serverless-incompatible modules | Clean builds without native binary errors |
+| 12 | **2026-06-18** | Add PWA Manifest + Capacitor Android wrapper | Users wanted mobile installation without separate native apps | Single codebase → web + Android |
+| 13 | **2026-06-18** | Create `prisma.config.ts` with `dotenv` | Prisma CLI couldn't read `.env.local` for migration commands | `db:migrate` and `db:studio` scripts work correctly |
+| 14 | **2026-06-20** | Implement inline `<script>` for theme flash prevention | Dark mode users saw white flash before React hydrated | Zero-flash theme application |
+| 15 | **2026-06-20** | Use `mounted` guard in `ThemeToggle` | Server-rendered icon didn't match client theme, causing hydration warnings | Clean hydration with placeholder |
+| 16 | **2026-06-22** | Set `PointerSensor` `distance: 8` activation constraint | Users accidentally dragged cards when trying to click | Intentional drag requires 8px movement |
+| 17 | **2026-06-25** | Create `providers.tsx` client wrapper | `SessionProvider` can't wrap server layout directly in App Router | Clean client boundary for auth + theme context |
+| 18 | **2026-07-01** | Implement keyword-based skill extraction (not AI) | AI skill extraction would be slow and expensive for every resume upload | Instant O(n) matching against 40+ curated keywords |
+| 19 | **2026-07-01** | Auto-fill application fields from parsed JD | Users shouldn't manually re-enter data AI already extracted | Location, salary, job type auto-populate from AI output |
+| 20 | **2026-08-15** | Implement `proxy.ts` middleware for route protection | Needed auth check before rendering protected pages | Unauthenticated users redirected to `/login` with callback URL |
+| 21 | **2026-09-21** | Refresh to "Dual-Theme Design System" with CSS custom properties | Previous design lacked dark mode; needed editorial, premium feel | 60/30/10 color architecture with light + dark themes |
+| 22 | **2026-09-21** | Use `@theme inline` (Tailwind v4) instead of `tailwind.config.js` | Tailwind v4 moves configuration into CSS; cleaner, no separate config file | Design tokens live next to their consumers in `globals.css` |
+| 23 | **2026-09-23** | Remove prototype Chat & Automation infrastructure | Chat drawer and mock n8n automation were premature; needed ground-up redesign | Clean, focused codebase ready for proper automation later |
+| 24 | **2026-09-25** | Implement collapsible sections in ApplicationDetailModal | Long JD/match data made the modal scrolling-heavy | Users expand only sections they care about |
+| 25 | **2026-10-02** | Add `.vscode/settings.json` with `css.lint.unknownAtRules: ignore` | VS Code flagged `@theme` and `@utility` as unknown CSS at-rules | Eliminated false-positive editor warnings for Tailwind v4 syntax |
 
 ---
 
-## 10. 🎯 Next Steps & Future Replanning
+## 10. 🎯 Future Roadmap
 
-With the experimental chat and mock automation removed, the codebase is completely clean, lightweight, and focused on its core strengths:
-1. **Google Calendar Synchronization**: Syncing interview dates and follow-ups to Google Calendar via OAuth.
-2. **ATS Resume Optimizer**: Side-by-side section rewriting and keyword optimization.
-3. **Semantic Job Recommendations (`pgvector`)**: Resume-based vector matching against active job listings.
-4. **Carefully Replanned AI Automation**: Designing an enterprise-grade agentic workflow for calendar, email, and tracking automation from first principles.
+With the current architecture stable and focused, planned enhancements include:
+
+1. **Google Calendar Sync**: OAuth-based interview date synchronization.
+2. **ATS Resume Optimizer**: Side-by-side keyword optimization and section rewriting.
+3. **Semantic Job Recommendations** (`pgvector`): Vector similarity matching between resume embeddings and active job listings.
+4. **Enterprise Automation**: Properly architected agentic workflows for calendar, email, and tracking automation.
+5. **Multi-Resume Management**: Support multiple active resumes for different job categories.
+6. **Browser Extension**: One-click job capture from LinkedIn, Indeed, and Greenhouse.
