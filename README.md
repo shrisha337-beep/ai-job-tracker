@@ -54,6 +54,7 @@
 | 🔄 **List + Kanban Views** | Toggle between a glassmorphic table view and the Kanban board |
 | ⚙️ **Settings Page** | Profile display, OpenAI API key configuration (bring your own key), billing/tier info |
 | 🎨 **Premium Dark UI** | 1,100+ line custom CSS design system with glassmorphism, animations, and gradient accents |
+| 🌊 **Interactive Moiré Hero** | Mathematical grating wave background (`MoireField`) with pointer aim tracking, drift physics, and dual-theme radial vignette |
 | 📱 **Mobile Responsive** | Fully responsive design that works beautifully on all screen sizes |
 | 🤖 **Android Mobile App** | Native Android APK via Capacitor that wraps the deployed web app |
 
@@ -71,7 +72,7 @@
 |:------|:-----------|
 | **Framework** | Next.js 16 (App Router, Turbopack) |
 | **Language** | TypeScript |
-| **Styling** | Tailwind CSS v4 + Custom CSS Design System (glassmorphism, animations) |
+| **Styling** | Tailwind CSS v4 + `tailwind-merge` + Custom CSS Design System (glassmorphism, animations) |
 | **Database** | PostgreSQL (hosted on [Neon](https://neon.tech)) |
 | **ORM** | Prisma v7 with `pg` driver adapter |
 | **Auth** | NextAuth.js v4 (Google OAuth) |
@@ -209,12 +210,19 @@ job-tracker/
 │   │   │   ├── ApplicationDetailModal.tsx
 │   │   │   ├── KanbanBoard.tsx
 │   │   │   └── KanbanColumn.tsx
-│   │   └── 📂 layout/
-│   │       └── AppLayout.tsx
+│   │   ├── 📂 layout/
+│   │   │   ├── AppLayout.tsx
+│   │   │   ├── JTLogo.tsx
+│   │   │   ├── ThemeProvider.tsx
+│   │   │   └── ThemeToggle.tsx
+│   │   └── 📂 ui/
+│   │       ├── demo.tsx               # MoireField showcase demo
+│   │       └── moire-field.tsx        # Interactive Moiré background component
 │   ├── 📂 lib/
 │   │   ├── 📄 auth.ts                 # NextAuth config
 │   │   ├── 📄 auth-helpers.ts         # Session helpers
-│   │   └── 📄 prisma.ts              # Prisma client with pg adapter
+│   │   ├── 📄 prisma.ts              # Prisma client with pg adapter
+│   │   └── 📄 utils.ts               # Class name combiner (clsx + tailwind-merge)
 │   └── 📂 types/
 │       ├── 📄 application.ts          # App type definitions
 │       └── 📄 next-auth.d.ts          # NextAuth type augmentation

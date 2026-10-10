@@ -64,8 +64,8 @@ src/proxy.ts
 src/app/
 ├── layout.tsx              → Root layout (Server Component, wraps everything)
 ├── providers.tsx           → Client-side context providers (SessionProvider + ThemeProvider)
-├── page.tsx                → Landing page (public, Server Component)
-├── globals.css             → Design system (tokens, themes, component styles)
+├── page.tsx                → Landing page with MoireField hero (public, Server Component)
+├── globals.css             → Design system (tokens, @theme inline, component styles)
 ├── manifest.ts             → PWA manifest generator
 ├── favicon.ico             → Browser favicon
 ├── icon.svg                → SVG app icon
@@ -134,7 +134,8 @@ sequenceDiagram
 1. `proxy.ts` checks if `/` is public → yes → allows through.
 2. `layout.tsx` (server) loads fonts, sets metadata, injects theme script.
 3. `providers.tsx` (client) initializes `SessionProvider` (no session) and `ThemeProvider`.
-4. `page.tsx` (server) renders the static landing page with hero, features, and footer.
+4. `page.tsx` (server) renders the landing page with interactive `<MoireField>` hero, backdrop radial vignette, `@keyframes hero-rise` animations, value proposition CTAs, 3-column feature cards, and footer.
+5. On the client, `MoireField` binds pointer event listeners and runs a `requestAnimationFrame` loop simulating drift physics, mouse aim tracking, and responsive grating transformations without canvas or WebGL dependencies.
 
 ### Flow B: Login Flow
 
@@ -516,6 +517,7 @@ sequenceDiagram
 | [`src/lib/prisma.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/lib/prisma.ts) | Prisma client singleton with `@prisma/adapter-pg` driver adapter | `prisma` | Every API route, every server page |
 | [`src/lib/auth.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/lib/auth.ts) | NextAuth configuration: providers, adapter, JWT callbacks, custom sign-in page | `authOptions` | NextAuth handler, every `getServerSession()` call |
 | [`src/lib/auth-helpers.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/lib/auth-helpers.ts) | Session helper wrappers for server components | `getRequiredSession()`, `getOptionalSession()` | Server pages (dashboard, applications) |
+| [`src/lib/utils.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/lib/utils.ts) | Class name merger utility (`clsx` + `tailwind-merge`) | `cn()` | `MoireField`, UI components, layout components |
 
 ### Type Definitions
 
@@ -523,6 +525,13 @@ sequenceDiagram
 |---|---|---|
 | [`src/types/application.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/types/application.ts) | Application data types | `Status`, `Application`, `ParsedJD`, `MatchAnalysis` |
 | [`src/types/next-auth.d.ts`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/types/next-auth.d.ts) | NextAuth type augmentation: adds `id` to `session.user` | Module augmentation |
+
+### UI & Background Components
+
+| File | Role | Key Props / Exports | Rendered By |
+|---|---|---|---|
+| [`src/components/ui/moire-field.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/components/ui/moire-field.tsx) | Interactive mathematical Moiré grating background with pointer physics, drift, and easing | `pitch`, `duty`, `detune`, `intensity`, `drift`, `reach`, `fade` | Landing page (`src/app/page.tsx`) |
+| [`src/components/ui/demo.tsx`](file:///e:/AI%20Job%20tracker/ai-job-tracker/src/components/ui/demo.tsx) | Standalone demo showcase component for MoireField | `MoireFieldDemo` | Standalone preview / docs |
 
 ### Layout Components
 
@@ -629,6 +638,8 @@ The design system lives entirely in [`globals.css`](file:///e:/AI%20Job%20tracke
   --radius-* (8 steps)
   --shadow-* (5 levels)
   --animate-* (keyframes)
+  --color-background, --color-foreground    ← Semantic color utilities bridge
+  --color-primary, --color-border, etc.     ← Maps CSS variables to Tailwind v4 utilities
 }
 
 :root {                             ← Light mode colors (60/30/10)
