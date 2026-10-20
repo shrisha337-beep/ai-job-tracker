@@ -9,7 +9,7 @@ This file tracks every significant update made during the hackathon period (20â€
 
 ## Tue 20 Oct 2026
 
-### MG0: Housekeeping + Auth Hardening
+### MG0: Housekeeping + Auth Hardening â€” commit [`4918166`](../../commit/4918166)
 
 **Security**
 - **Removed the email-only Credentials provider.** Anyone could sign in (and auto-create an account) by typing any email address. Google OAuth is now the only login path. ([`src/lib/auth.ts`](src/lib/auth.ts), [`src/app/login/page.tsx`](src/app/login/page.tsx))
