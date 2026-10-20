@@ -10,8 +10,6 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
@@ -19,20 +17,6 @@ export default function LoginPage() {
       router.push("/dashboard");
     }
   }, [session, router]);
-
-  const handleCredentialsLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setIsLoading(true);
-    try {
-      await signIn("credentials", {
-        email,
-        callbackUrl: "/dashboard",
-      });
-    } catch {
-      setIsLoading(false);
-    }
-  };
 
   const handleGoogleLogin = () => {
     setIsGoogleLoading(true);
@@ -59,7 +43,7 @@ export default function LoginPage() {
             <JTLogo size={36} />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-[var(--color-foreground)] mb-1">
-            Sign in to Job Tracker
+            Sign in to JobTracker AI
           </h1>
           <p className="text-sm text-[var(--color-muted-foreground)]">
             Welcome back — let&apos;s pick up where you left off.
@@ -72,7 +56,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={isGoogleLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--color-background)] text-[var(--color-foreground)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-1)] disabled:opacity-50 disabled:cursor-not-allowed mb-5"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--color-background)] text-[var(--color-foreground)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-1)] disabled:opacity-50 disabled:cursor-not-allowed"
             id="google-login-btn"
           >
             {isGoogleLoading ? (
@@ -88,47 +72,8 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 mb-5">
-            <div className="flex-1 h-px bg-[var(--color-border)]" />
-            <span className="text-xs text-[var(--color-muted)]">
-              or
-            </span>
-            <div className="flex-1 h-px bg-[var(--color-border)]" />
-          </div>
-
-          {/* Email Login Form */}
-          <form onSubmit={handleCredentialsLogin} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="label">
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="input w-full"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading || !email}
-              className="btn-primary w-full py-2.5 text-sm"
-              id="email-login-btn"
-            >
-              {isLoading ? (
-                <div className="loading-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-              ) : (
-                "Sign in with Email"
-              )}
-            </button>
-          </form>
-
-          <p className="text-xs text-[var(--color-muted)] text-center mt-5">
-            No password required. New accounts are created automatically.
+          <p className="text-xs text-[var(--color-muted)] text-center mt-4">
+            Sign in securely with your Google account.
           </p>
         </div>
 
@@ -150,3 +95,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

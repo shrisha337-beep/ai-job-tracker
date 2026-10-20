@@ -15,9 +15,15 @@
 
 **Manage your entire job search pipeline — from bookmarking roles to landing offers — with an interactive Kanban board, AI-powered JD parsing, and resume match scoring.**
 
-[🌐 Live Demo](https://ai-job-tracker-demo.vercel.app) · [🐛 Report Bug](https://github.com/shrisha337-beep/ai-job-tracker/issues) · [✨ Request Feature](https://github.com/shrisha337-beep/ai-job-tracker/issues)
+[🐛 Report Bug](https://github.com/shrisha337-beep/ai-job-tracker/issues) · [✨ Request Feature](https://github.com/shrisha337-beep/ai-job-tracker/issues)
 
 </div>
+
+---
+
+## 🏆 Amazon Hackathon (20–23 Oct 2026)
+
+This repository is being extended during the Amazon Hackathon (Alexa+ simulated track · AWS Builder · Open Source). The pre-hackathon state is tagged as [`v1-baseline`](../../tree/v1-baseline). Every change made during the hackathon is logged with commit references in [`HACKATHON_CHANGELOG.md`](HACKATHON_CHANGELOG.md).
 
 ---
 
@@ -62,7 +68,7 @@
 
 ## 📸 Screenshots
 
-> Screenshots and demo GIFs are available in the repository's [`/screenshots`](./screenshots) directory. Visit the [live demo](https://ai-job-tracker-demo.vercel.app) to explore the full experience.
+> Screenshots and a demo video will be added here before the hackathon submission.
 
 ---
 
@@ -155,7 +161,7 @@ Get up and running in under 5 minutes:
 ```bash
 # 1. Clone the repository
 git clone https://github.com/shrisha337-beep/ai-job-tracker.git
-cd ai-job-tracker/job-tracker
+cd ai-job-tracker
 
 # 2. Install dependencies
 npm install
@@ -182,7 +188,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with Google. �
 ## 📁 Project Structure
 
 ```
-job-tracker/
+ai-job-tracker/
 ├── 📂 src/
 │   ├── 📂 app/
 │   │   ├── 📂 (app)/                   # Authenticated app routes
@@ -305,7 +311,13 @@ Create a `.env.local` file in the project root with the following variables:
 | `NEXTAUTH_URL` | App URL (`http://localhost:3000` for dev) | Your deployment URL |
 | `GOOGLE_CLIENT_ID` | Google OAuth Client ID | [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | Same as above |
-| `OPENAI_API_KEY` | OpenAI API key for AI features | [platform.openai.com](https://platform.openai.com/) → API Keys |
+| `OPENAI_API_KEY` | OpenAI API key (fallback LLM) | [platform.openai.com](https://platform.openai.com/) → API Keys |
+| `AWS_REGION` | AWS region for Bedrock (e.g. `ap-south-1`) | [AWS Console](https://console.aws.amazon.com/) |
+| `AWS_ACCESS_KEY_ID` | IAM access key with Bedrock permissions | AWS Console → IAM → Users → Security credentials |
+| `AWS_SECRET_ACCESS_KEY` | IAM secret key | Same as above |
+| `BEDROCK_MODEL_ID` | Bedrock model (primary LLM) | e.g. `anthropic.claude-3-haiku-20240307-v1:0` |
+
+A ready-to-copy template lives in [`.env.example`](.env.example).
 
 <details>
 <summary>📋 Example <code>.env.local</code> file</summary>
@@ -336,7 +348,7 @@ OPENAI_API_KEY="sk-proj-your-api-key-here"
 2. **Import** the repository on [vercel.com](https://vercel.com).
 3. **Add environment variables** in the Vercel Dashboard:
    - Go to **Settings → Environment Variables**
-   - Add all six variables from the table above
+   - Add all variables from the table above
 4. **Set `NEXTAUTH_URL`** to your Vercel production URL (e.g., `https://your-app.vercel.app`).
 5. **Deploy** — Vercel will build and deploy automatically on every push.
 
@@ -611,59 +623,21 @@ If you have **USB debugging** enabled on your phone:
 
 ---
 
-## 🗺️ Future Expansion Roadmap
+## 🧪 Tests
 
-We are transforming JobTracker AI from a manual tracking tool into a **fully automated, AI-driven job search command center**. Below is the end-to-end implementation plan:
+Tests use [Vitest](https://vitest.dev/) and live in `tests/`. They run without a database or any LLM call.
 
-### 🏗️ Architecture & n8n Automation
-The upcoming architecture integrates **self-hosted n8n** (running on **Oracle Cloud Always Free Tier**) to handle asynchronous automation, chat workflows, and platform syncing, communicating via webhooks with our Next.js backend and querying the database directly for reads.
-
-```mermaid
-graph TD
-    Client["Client (Browser / PWA)"] <--> Next["Next.js Server (Vercel)"]
-    Next <-->|"Webhooks"| n8n["n8n (Oracle Cloud Free Tier)"]
-    n8n -->|"Direct DB Reads"| DB[("Neon PostgreSQL + pgvector")]
-    n8n <--> Gemini["Google Gemini API (Pluggable)"]
-    n8n --> GCal["Google Calendar API"]
-    n8n --> Resend["Resend (Email)"]
-    n8n --> WebPush["Web Push (Browser)"]
-    n8n --> Drive["Google Drive / APIs"]
+```bash
+npm test          # run once
+npm run test:watch
 ```
 
----
+| Suite | What it covers |
+|-------|----------------|
+| `tests/auth/route-guard.test.ts` | Protected pages redirect to `/login`, protected APIs return `401`, public paths stay open |
+| `tests/auth/auth-config.test.ts` | Google OAuth is the only login provider (no email-only login) |
 
-### 📅 Implementation Phases
 
-#### **Phase 1: n8n Setup & Chat Infrastructure**
-- **Host n8n**: Deploy n8n via Docker Compose on an Always Free Oracle Cloud Ampere A1 instance (no cold starts).
-- **Chat UI**: Design a glassmorphic, slide-out chat sidebar panel (`ChatSidebar.tsx`) with quick-action chips.
-- **Next.js Integration**: Build chat history endpoints (`/api/chat`) and secure n8n webhook handlers (`/api/webhooks/n8n`).
-- **Basic Flow**: Route chat messages through n8n to Gemini for processing and return response cards.
-
-#### **Phase 2: Chatbot Action Workflows & ATS Optimizer**
-- **Chat Actions**: Allow the chatbot to update status, add notes, and parse JDs automatically based on user instructions.
-- **ATS Optimizer**: Build an API (`/api/ai/optimize-resume`) with two modes:
-  - *Suggest Changes*: Shows side-by-side diffs of resume sections vs. JD suggestions.
-  - *Auto-Generate*: Rewrites specific sections to match the JD and exports an optimized draft.
-- **Pluggable LLM**: Abstract the LLM service to allow swapping Gemini with a custom self-hosted LLM in the future.
-
-#### **Phase 3: Google Calendar Sync (OAuth)**
-- **Google Calendar OAuth**: Extend our existing Google Sign-In with calendar access scopes.
-- **In-App Calendar**: Design a dedicated `/calendar` page featuring a interactive monthly/weekly scheduling dashboard.
-- **Auto-Scheduler**: Chatbot schedules interviews, deadlines, and follow-ups, syncing them directly to the user's Google Calendar.
-
-#### **Phase 4: RAG-Powered Platform Connectors**
-- **Vector Storage**: Enable `pgvector` in the Neon PostgreSQL instance (0 additional cost, high integration speed).
-- **Drive Integration**: Connect Google Drive to parse and index stored resumes and cover letters.
-- **Job Feed & Semantic Search**: Fetch and vector-embed job listings from platforms (Indeed, LinkedIn limited APIs).
-- **Job Recommendations**: Perform vector similarity searches using resume embeddings to recommend relevant jobs on a dedicated `/jobs` page.
-
-#### **Phase 5: Unified Notification Center**
-- **In-App Alerts**: Add a notification bell dropdown in the app header for real-time status updates and resume tips.
-- **Email Digests**: n8n-powered daily/weekly digest emails summarizing upcoming interviews and deadlines via Resend.
-- **Browser Push**: Service worker integration (`public/sw.js`) utilizing VAPID keys for instant desktop/mobile push alerts.
-
----
 
 ## 🤝 Contributing
 

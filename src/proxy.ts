@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Public paths that don't require auth
-const PUBLIC_PATHS = ["/", "/login", "/api/auth"];
+// Public paths that don't require auth.
+// "/" must match exactly — a prefix match on "/" would make every route public.
+const PUBLIC_EXACT = ["/"];
+const PUBLIC_PREFIXES = ["/login", "/api/auth", "/privacy", "/terms"];
+
+export function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_EXACT.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow public paths, static assets and files through
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  if (isPublic || pathname.startsWith("/_next") || pathname.includes(".")) {
+  // Allow public paths, Next internals and static files through
+  if (
+    isPublicPath(pathname) ||
+    pathname.startsWith("/_next") ||
+    /\.[a-z0-9]+$/i.test(pathname)
+  ) {
     return NextResponse.next();
   }
 
@@ -18,6 +30,9 @@ export function proxy(req: NextRequest) {
     req.cookies.get("__Secure-next-auth.session-token");
 
   if (!sessionToken) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
