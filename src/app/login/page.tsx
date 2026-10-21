@@ -1,26 +1,40 @@
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { JTLogo } from "@/components/layout/JTLogo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { getSafeCallbackUrl } from "@/lib/safe-callback";
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  AccessDenied: "Access was denied. Please try again with a different account.",
+  OAuthCallback: "Google sign-in didn't complete. Please try again.",
+  Configuration: "Sign-in is temporarily unavailable. Please try again later.",
+};
+
+function LoginForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const params = useSearchParams();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const callbackUrl = getSafeCallbackUrl(params.get("callbackUrl"));
+  const errorCode = params.get("error");
+  const errorMessage = errorCode
+    ? ERROR_MESSAGES[errorCode] ?? "Something went wrong while signing in."
+    : null;
 
   useEffect(() => {
     if (session) {
-      router.push("/dashboard");
+      router.push(callbackUrl);
     }
-  }, [session, router]);
+  }, [session, router, callbackUrl]);
 
   const handleGoogleLogin = () => {
     setIsGoogleLoading(true);
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { callbackUrl });
   };
 
   if (status === "loading") {
@@ -43,7 +57,7 @@ export default function LoginPage() {
             <JTLogo size={36} />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-[var(--color-foreground)] mb-1">
-            Sign in to JobTracker AI
+            Sign in to Campus Career Copilot
           </h1>
           <p className="text-sm text-[var(--color-muted-foreground)]">
             Welcome back — let&apos;s pick up where you left off.
@@ -51,7 +65,16 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="card p-6">
+        <div className="card bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-[6px] p-6 shadow-xs">
+          {errorMessage && (
+            <p
+              role="alert"
+              className="mb-4 rounded-md border border-[var(--color-danger)]/30 bg-[var(--color-danger-muted)] p-3 text-xs text-[var(--color-danger)] leading-relaxed"
+            >
+              {errorMessage}
+            </p>
+          )}
+
           {/* Google Login */}
           <button
             onClick={handleGoogleLogin}
@@ -96,3 +119,10 @@ export default function LoginPage() {
   );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
