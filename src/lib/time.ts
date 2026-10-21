@@ -10,6 +10,6 @@ export function toISTDateString(d: Date): string {
 }
 
 export function toISTDate(d: Date): Date {
-  const dateStr = toISTDateString(d);
-  return new Date(`${dateStr}T00:00:00.000Z`);
+  const [year, month, day] = toISTDateString(d).split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
 }
