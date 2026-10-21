@@ -111,7 +111,8 @@ describe("A2: degraded mode without resume and tie-breaks", () => {
     const res = rankListings([makeListing()], {}, {}, NOW);
     expect(res.resumeMissing).toBe(true);
     expect(res.ranked[0].subScores.match).toBe(0);
-    expect(res.ranked[0].reasons).toContain("No resume uploaded");
+    expect(res.ranked[0].matchedSkills).toEqual([]);
+    expect(res.ranked[0].daysLeft).toBe(5);
 
     const withResume = rankListings([makeListing()], { resumeSkills: new Set(["python"]) }, {}, NOW);
     expect(withResume.resumeMissing).toBe(false);
