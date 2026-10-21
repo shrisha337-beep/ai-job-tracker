@@ -37,7 +37,7 @@ Also verified: `tsc --noEmit` clean, ESLint clean on changed files.
 
 ## Wed 21 Oct 2026
 
-### MG1: Schema + Seed
+### MG1: Schema + Seed — commit [`2269ea9`](../../commit/2269ea9)
 
 **Data Model & Database**
 - **Extended Prisma schema (`prisma/schema.prisma`)** with the Campus Career Pilot domain models:
