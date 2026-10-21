@@ -49,6 +49,9 @@ function cutBlocks(minutes: number, topic: string) {
 export function buildPlan(input: PlanInput, now: Date) {
   const today = toISTDate(now);
   const targetDrive = toISTDate(input.driveDate);
+  if (targetDrive.getTime() < today.getTime()) {
+    throw new Error("driveDate cannot be before today");
+  }
   const maxEnd = new Date(today.getTime() + (MAX_DAYS - 1) * MS_PER_DAY);
   const endDate = targetDrive.getTime() < maxEnd.getTime() ? targetDrive : maxEnd;
   const numDays = Math.max(1, Math.round((endDate.getTime() - today.getTime()) / MS_PER_DAY) + 1);
@@ -125,8 +128,14 @@ export function buildPlan(input: PlanInput, now: Date) {
     const safeWeights = weights.map((item) => ({ topic: item.topic, w: totalW > 0 ? item.w : 1.0 }));
     const sumW = safeWeights.reduce((sum, item) => sum + item.w, 0);
 
-    for (const item of safeWeights) {
-      const mins = Math.round((item.w / sumW) * totalFree);
+    let allocatedSoFar = 0;
+    for (let i = 0; i < safeWeights.length; i++) {
+      const item = safeWeights[i];
+      const isLast = i === safeWeights.length - 1;
+      const mins = isLast
+        ? Math.max(0, totalFree - allocatedSoFar)
+        : Math.min(totalFree - allocatedSoFar, Math.round((item.w / sumW) * totalFree));
+      allocatedSoFar += mins;
       dsaPool.push(...cutBlocks(mins, item.topic));
     }
   }

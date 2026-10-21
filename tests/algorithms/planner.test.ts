@@ -24,22 +24,25 @@ describe("A6: plan window calculations", () => {
     const uniqueDays = new Set(res.tasks.map((t) => t.date.toISOString().slice(0, 10)));
     expect(uniqueDays.size).toBeLessThanOrEqual(expectedDays);
   });
+
+  it("driveDate earlier than today is rejected", () => {
+    expect(() =>
+      buildPlan(makeInput({ driveDate: new Date("2026-10-20T12:00:00Z") }), NOW)
+    ).toThrow("driveDate cannot be before today");
+  });
 });
 
 describe("A6: pinned tasks and overflow rule", () => {
   it("3 applications due the same day + 1 revision with hoursPerDay = 1 -> all four on that day, 0 DSA minutes that day, overCapacity true", () => {
-    // Listing deadline 2026-10-23 -> application date 2026-10-22
     const sameDayDeadline = new Date("2026-10-23T12:00:00Z");
     const res = buildPlan(
       makeInput({
         driveDate: new Date("2026-10-25T12:00:00Z"),
-        hoursPerDay: 1, // 60 minutes capacity
+        hoursPerDay: 1,
         masteries: [
-          // Revision due on 2026-10-22 (20 min)
           { topic: "trees", mastery: 0.5, nextReviewAt: new Date("2026-10-22T12:00:00Z") },
         ],
         topListings: [
-          // 3 applications due on 2026-10-22 (3 * 30 min = 90 min)
           { id: "1", title: "SDE 1", company: "Amazon", deadline: sameDayDeadline },
           { id: "2", title: "SDE 2", company: "Google", deadline: sameDayDeadline },
           { id: "3", title: "SDE 3", company: "Meta", deadline: sameDayDeadline },
@@ -49,12 +52,41 @@ describe("A6: pinned tasks and overflow rule", () => {
     );
 
     const targetDayTasks = res.tasks.filter((t) => t.date.toISOString().slice(0, 10) === "2026-10-22");
-    // All 4 pinned tasks must stay on that day (3 applications + 1 revision = 110 min > 60 min capacity)
     expect(targetDayTasks.length).toBe(4);
     expect(targetDayTasks.filter((t) => t.kind === "APPLICATION").length).toBe(3);
     expect(targetDayTasks.filter((t) => t.kind === "REVISION").length).toBe(1);
     expect(targetDayTasks.some((t) => t.kind === "DSA")).toBe(false);
     expect(res.overCapacity).toBe(true);
+  });
+
+  it("an overdue revision lands on today", () => {
+    const res = buildPlan(
+      makeInput({
+        masteries: [
+          { topic: "arrays", mastery: 0.5, nextReviewAt: new Date("2026-10-18T12:00:00Z") }, // overdue
+        ],
+      }),
+      NOW
+    );
+    const rev = res.tasks.find((t) => t.kind === "REVISION" && t.topic === "arrays");
+    expect(rev?.date.toISOString().slice(0, 10)).toBe("2026-10-21");
+  });
+
+  it("an application is placed the day before the deadline, and skipped when that day is outside the window", () => {
+    const res = buildPlan(
+      makeInput({
+        driveDate: new Date("2026-10-24T12:00:00Z"), // window ends Oct 24
+        topListings: [
+          { id: "1", title: "In Window", company: "Amazon", deadline: new Date("2026-10-24T12:00:00Z") }, // app date Oct 23 (in)
+          { id: "2", title: "Out Window", company: "Google", deadline: new Date("2026-10-30T12:00:00Z") }, // app date Oct 29 (out)
+        ],
+      }),
+      NOW
+    );
+    const appTasks = res.tasks.filter((t) => t.kind === "APPLICATION");
+    expect(appTasks.length).toBe(1);
+    expect(appTasks[0].title).toContain("Amazon");
+    expect(appTasks[0].date.toISOString().slice(0, 10)).toBe("2026-10-23");
   });
 
   it.each([
@@ -70,7 +102,7 @@ describe("A6: pinned tasks and overflow rule", () => {
   });
 });
 
-describe("A6: DSA block cutting and remainder merge", () => {
+describe("A6: DSA allocation, sizing, and capacity fit", () => {
   it.each([
     [50, [50]],
     [70, [45, 25]],
@@ -97,10 +129,68 @@ describe("A6: DSA block cutting and remainder merge", () => {
     const dsaMinutes = res.tasks.filter((t) => t.kind === "DSA").map((t) => t.minutes);
     expect(dsaMinutes).toEqual(expectedBlocks);
   });
+
+  it("a new student with no mastery rows, where DSA minutes split by weight alone", () => {
+    const res = buildPlan(
+      makeInput({
+        driveDate: new Date("2026-10-21T18:00:00Z"),
+        hoursPerDay: 7, // 420 minutes
+        masteries: [], // no mastery rows
+      }),
+      NOW
+    );
+    const dsaTasks = res.tasks.filter((t) => t.kind === "DSA");
+    expect(dsaTasks.length).toBeGreaterThan(0);
+    // Weight 1.0 topics (arrays, dynamic-programming) receive more or equal minutes than weight 0.7 topics (recursion, linked-lists)
+    const arrMinutes = dsaTasks.filter((t) => t.topic === "arrays").reduce((s, t) => s + t.minutes, 0);
+    const recMinutes = dsaTasks.filter((t) => t.topic === "recursion").reduce((s, t) => s + t.minutes, 0);
+    expect(arrMinutes).toBeGreaterThan(recMinutes);
+  });
+
+  it("an exact fit: no cut, overCapacity: false, minutesCut: 0", () => {
+    // 1 day with exactly 45 minutes of DSA allocated to arrays
+    const res = buildPlan(
+      makeInput({
+        driveDate: new Date("2026-10-21T18:00:00Z"),
+        hoursPerDay: 45 / 60,
+        masteries: [
+          { topic: "arrays", mastery: 0 },
+          { topic: "strings", mastery: 1 },
+          { topic: "linked-lists", mastery: 1 },
+          { topic: "trees", mastery: 1 },
+          { topic: "graphs", mastery: 1 },
+          { topic: "dynamic-programming", mastery: 1 },
+          { topic: "recursion", mastery: 1 },
+          { topic: "hashing", mastery: 1 },
+        ],
+      }),
+      NOW
+    );
+    expect(res.overCapacity).toBe(false);
+    expect(res.minutesCut).toBe(0);
+  });
+
+  it("DSA shrinking to fit, with minutesCut equal to the cut amount", () => {
+    // Capacity 60 min, but 50 min pinned (30 resume + 20 revision) leaves only 10 min for DSA (less than 15 min remainder threshold)
+    const res = buildPlan(
+      makeInput({
+        driveDate: new Date("2026-10-21T18:00:00Z"),
+        hoursPerDay: 1, // 60 min
+        hasResume: false, // 30 min resume
+        masteries: [
+          { topic: "arrays", mastery: 0, nextReviewAt: new Date("2026-10-20T12:00:00Z") }, // 20 min revision
+        ],
+      }),
+      NOW
+    );
+    // 10 free minutes left on day 1 is below DSA_MIN_REMAINDER (15), so DSA pool cannot pour
+    expect(res.overCapacity).toBe(true);
+    expect(res.minutesCut).toBeGreaterThan(0);
+  });
 });
 
-describe("A6: completed tasks preservation", () => {
-  it("preserves completed tasks and deducts from day capacity", () => {
+describe("A6: completed tasks preservation and re-plan", () => {
+  it("a re-plan keeps completed tasks and regenerates only the incomplete ones from today onward", () => {
     const res = buildPlan(
       makeInput({
         hoursPerDay: 1.5,
@@ -109,9 +199,17 @@ describe("A6: completed tasks preservation", () => {
             date: new Date("2026-10-21T06:00:00Z"),
             kind: "DSA",
             topic: "arrays",
-            title: "Practice Arrays",
+            title: "Completed Arrays Practice",
             minutes: 45,
             done: true,
+          },
+          {
+            date: new Date("2026-10-21T06:00:00Z"),
+            kind: "DSA",
+            topic: "strings",
+            title: "Incomplete Strings Practice",
+            minutes: 45,
+            done: false, // Incomplete -> not kept
           },
         ],
       }),
@@ -119,8 +217,7 @@ describe("A6: completed tasks preservation", () => {
     );
 
     const day1Tasks = res.tasks.filter((t) => t.date.toISOString().slice(0, 10) === "2026-10-21");
-    expect(day1Tasks.some((t) => t.title === "Practice Arrays" && t.done)).toBe(true);
-    const totalDay1 = day1Tasks.reduce((acc, t) => acc + t.minutes, 0);
-    expect(totalDay1).toBeLessThanOrEqual(90);
+    expect(day1Tasks.some((t) => t.title === "Completed Arrays Practice" && t.done)).toBe(true);
+    expect(day1Tasks.some((t) => t.title === "Incomplete Strings Practice")).toBe(false);
   });
 });
