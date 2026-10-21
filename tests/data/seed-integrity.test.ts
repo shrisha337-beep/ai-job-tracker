@@ -70,6 +70,13 @@ describe("seed listings integrity", () => {
     }
   });
 
+  it("every tag in ROLE_TAGS is used by at least one listing", () => {
+    const usedTags = new Set(listings.flatMap((l) => l.roleTags));
+    for (const tag of ROLE_TAGS) {
+      expect(usedTags.has(tag), `Tag "${tag}" is never used in seed listings`).toBe(true);
+    }
+  });
+
   it("every listing has required fields and positive illustrative stipend", () => {
     for (const listing of listings) {
       expect(listing.company).toBeTruthy();

@@ -12,24 +12,8 @@
 
 export type SeedWorkMode = "REMOTE" | "HYBRID" | "ONSITE";
 
-export const ROLE_TAGS = [
-  "sde",
-  "frontend",
-  "backend",
-  "fullstack",
-  "data",
-  "ml",
-  "mobile",
-  "devops",
-  "cloud",
-  "qa",
-  "security",
-  "embedded",
-  "product",
-  "design",
-] as const;
-
-export type RoleTag = (typeof ROLE_TAGS)[number];
+import { ROLE_TAGS, type RoleTag } from "../../src/lib/role-tags";
+export { ROLE_TAGS, type RoleTag };
 
 export interface SeedListing {
   slug: string;

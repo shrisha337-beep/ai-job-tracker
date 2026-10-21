@@ -28,175 +28,105 @@ describe("A2: mode rule", () => {
   ];
 
   it("request.mode provided acts as hard filter and sets modeFit to 1 for all remaining", () => {
-    const results = rankListings(
+    const res = rankListings(
       listings,
       { resumeSkills: new Set(["python", "dsa"]), preferredMode: "ONSITE" },
       { mode: "REMOTE" },
       NOW
     );
-
-    expect(results.length).toBe(1);
-    expect(results[0].listing.mode).toBe("REMOTE");
-    expect(results[0].subScores.modeFit).toBe(1);
+    expect(res.ranked.length).toBe(1);
+    expect(res.ranked[0].listing.mode).toBe("REMOTE");
+    expect(res.ranked[0].subScores.modeFit).toBe(1);
   });
 
   it("no request.mode + preferredMode matches listing mode -> modeFit = 1", () => {
-    const results = rankListings(
-      [makeListing({ mode: "HYBRID" })],
-      { preferredMode: "HYBRID" },
-      {},
-      NOW
-    );
-    expect(results[0].subScores.modeFit).toBe(1);
+    const res = rankListings([makeListing({ mode: "HYBRID" })], { preferredMode: "HYBRID" }, {}, NOW);
+    expect(res.ranked[0].subScores.modeFit).toBe(1);
   });
 
   it("no request.mode + preferredMode mismatches listing mode -> modeFit = 0", () => {
-    const results = rankListings(
-      [makeListing({ mode: "HYBRID" })],
-      { preferredMode: "ONSITE" },
-      {},
-      NOW
-    );
-    expect(results[0].subScores.modeFit).toBe(0);
+    const res = rankListings([makeListing({ mode: "HYBRID" })], { preferredMode: "ONSITE" }, {}, NOW);
+    expect(res.ranked[0].subScores.modeFit).toBe(0);
   });
 
   it("no request.mode + no preference (null or undefined) -> modeFit = 1", () => {
-    const resNull = rankListings(
-      [makeListing({ mode: "ONSITE" })],
-      { preferredMode: null },
-      {},
-      NOW
-    );
-    expect(resNull[0].subScores.modeFit).toBe(1);
-
-    const resUndef = rankListings(
-      [makeListing({ mode: "ONSITE" })],
-      {},
-      {},
-      NOW
-    );
-    expect(resUndef[0].subScores.modeFit).toBe(1);
+    expect(rankListings([makeListing({ mode: "ONSITE" })], { preferredMode: null }, {}, NOW).ranked[0].subScores.modeFit).toBe(1);
+    expect(rankListings([makeListing({ mode: "ONSITE" })], {}, {}, NOW).ranked[0].subScores.modeFit).toBe(1);
   });
 });
 
 describe("A2: urgency decay and expiry", () => {
   it("excludes expired listings where deadline < now", () => {
-    const expired = makeListing({
-      id: "l-expired",
-      deadline: new Date("2026-10-20T12:00:00Z"), // 1 day in past
-    });
-    const results = rankListings([expired], {}, {}, NOW);
-    expect(results.length).toBe(0);
+    const expired = makeListing({ deadline: new Date("2026-10-20T12:00:00Z") });
+    expect(rankListings([expired], {}, {}, NOW).ranked.length).toBe(0);
   });
 
   it("urgency is 1.0 when deadline <= 7 days", () => {
-    const l7 = makeListing({
-      deadline: new Date("2026-10-28T12:00:00Z"), // exactly 7 days
-    });
-    const results = rankListings([l7], {}, {}, NOW);
-    expect(results[0].subScores.urgency).toBe(1.0);
+    const l7 = makeListing({ deadline: new Date("2026-10-28T12:00:00Z") });
+    expect(rankListings([l7], {}, {}, NOW).ranked[0].subScores.urgency).toBe(1.0);
   });
 
   it("urgency is 0.2 when deadline >= 30 days", () => {
-    const l35 = makeListing({
-      deadline: new Date("2026-11-25T12:00:00Z"), // 35 days
-    });
-    const results = rankListings([l35], {}, {}, NOW);
-    expect(results[0].subScores.urgency).toBe(0.2);
+    const l35 = makeListing({ deadline: new Date("2026-11-25T12:00:00Z") });
+    expect(rankListings([l35], {}, {}, NOW).ranked[0].subScores.urgency).toBe(0.2);
   });
 
   it("urgency decays linearly between 7 and 30 days", () => {
-    // At 18.5 days (midpoint between 7 and 30):
-    // urgency = 1.0 - 0.8 * (11.5 / 23) = 1.0 - 0.4 = 0.6
-    const lMid = makeListing({
-      deadline: new Date(NOW.getTime() + 18.5 * 24 * 60 * 60 * 1000),
-    });
-    const results = rankListings([lMid], {}, {}, NOW);
-    expect(results[0].subScores.urgency).toBeCloseTo(0.6, 3);
+    const lMid = makeListing({ deadline: new Date(NOW.getTime() + 18.5 * 24 * 60 * 60 * 1000) });
+    expect(rankListings([lMid], {}, {}, NOW).ranked[0].subScores.urgency).toBeCloseTo(0.6, 3);
   });
 });
 
 describe("A2: roleFit overlap coefficient", () => {
   it("calculates overlap coefficient |targetRoles ∩ roleTags| / |targetRoles|", () => {
     const listing = makeListing({ roleTags: ["sde", "backend", "cloud"] });
-
-    // targetRoles: ["sde", "frontend"] -> 1 match out of 2 = 0.5
-    const res = rankListings(
-      [listing],
-      { targetRoles: ["sde", "frontend"] },
-      {},
-      NOW
-    );
-    expect(res[0].subScores.roleFit).toBe(0.5);
+    const res = rankListings([listing], { targetRoles: ["sde", "frontend"] }, {}, NOW);
+    expect(res.ranked[0].subScores.roleFit).toBe(0.5);
   });
 
   it("returns 0 when targetRoles has no overlap or is empty", () => {
     const listing = makeListing({ roleTags: ["data", "ml"] });
-    const res = rankListings(
-      [listing],
-      { targetRoles: ["sde"] },
-      {},
-      NOW
-    );
-    expect(res[0].subScores.roleFit).toBe(0);
-
-    const resEmpty = rankListings([listing], { targetRoles: [] }, {}, NOW);
-    expect(resEmpty[0].subScores.roleFit).toBe(0);
+    expect(rankListings([listing], { targetRoles: ["sde"] }, {}, NOW).ranked[0].subScores.roleFit).toBe(0);
+    expect(rankListings([listing], { targetRoles: [] }, {}, NOW).ranked[0].subScores.roleFit).toBe(0);
   });
 });
 
-describe("A2: stipend filter", () => {
+describe("A2: stipend filter and hiddenNoStipend count", () => {
   const listings: RankingListing[] = [
     makeListing({ id: "l-high", stipend: 80000 }),
     makeListing({ id: "l-low", stipend: 20000 }),
     makeListing({ id: "l-unpaid", stipend: null }),
   ];
 
-  it("drops listings below minStipend or with null stipend", () => {
-    const results = rankListings(listings, {}, { minStipend: 50000 }, NOW);
-    expect(results.length).toBe(1);
-    expect(results[0].listing.id).toBe("l-high");
+  it("drops listings below minStipend and counts hiddenNoStipend", () => {
+    const res = rankListings(listings, {}, { minStipend: 50000 }, NOW);
+    expect(res.ranked.length).toBe(1);
+    expect(res.ranked[0].listing.id).toBe("l-high");
+    expect(res.hiddenNoStipend).toBe(1);
   });
 });
 
-describe("A2: degraded mode without resume and sorting", () => {
-  it("degrades gracefully to match=0 without resume, does not throw", () => {
-    const listing = makeListing();
-    const results = rankListings([listing], {}, {}, NOW);
+describe("A2: degraded mode without resume and tie-breaks", () => {
+  it("degrades gracefully to match=0 without resume, flags resumeMissing: true", () => {
+    const res = rankListings([makeListing()], {}, {}, NOW);
+    expect(res.resumeMissing).toBe(true);
+    expect(res.ranked[0].subScores.match).toBe(0);
+    expect(res.ranked[0].reasons).toContain("No resume uploaded");
 
-    expect(results[0].subScores.match).toBe(0);
-    expect(results[0].reasons).toContain("No resume uploaded");
+    const withResume = rankListings([makeListing()], { resumeSkills: new Set(["python"]) }, {}, NOW);
+    expect(withResume.resumeMissing).toBe(false);
   });
 
-  it("sorts listings descending by total rank", () => {
-    const lStrongMatch = makeListing({
-      id: "l-strong",
-      skills: ["python", "dsa"],
-      preferredSkills: ["aws"],
-      deadline: new Date(NOW.getTime() + 5 * 24 * 60 * 60 * 1000), // urgency 1.0
-      roleTags: ["sde"],
-    });
+  it("breaks ties by deadline ascending, then slug ascending", () => {
+    const l1 = makeListing({ id: "1", slug: "beta-slug", deadline: new Date("2026-10-28T12:00:00Z") });
+    const l2 = makeListing({ id: "2", slug: "alpha-slug", deadline: new Date("2026-10-28T12:00:00Z") });
+    const lEarlier = makeListing({ id: "3", slug: "gamma-slug", deadline: new Date("2026-10-24T12:00:00Z") });
 
-    const lWeakMatch = makeListing({
-      id: "l-weak",
-      skills: ["csharp", "dotnet"],
-      preferredSkills: ["azure"],
-      deadline: new Date(NOW.getTime() + 40 * 24 * 60 * 60 * 1000), // urgency 0.2
-      roleTags: ["qa"],
-    });
-
-    const results = rankListings(
-      [lWeakMatch, lStrongMatch],
-      {
-        resumeSkills: new Set(["python", "dsa", "aws"]),
-        targetRoles: ["sde"],
-      },
-      {},
-      NOW
-    );
-
-    expect(results[0].listing.id).toBe("l-strong");
-    expect(results[1].listing.id).toBe("l-weak");
-    expect(results[0].totalRank).toBeGreaterThan(results[1].totalRank);
+    // All 3 have identical skills & roleTags, but lEarlier has closer deadline (higher urgency)
+    // l1 and l2 have same rank & same deadline, so slug tie-break places alpha-slug before beta-slug
+    const res = rankListings([l1, l2, lEarlier], {}, {}, NOW);
+    expect(res.ranked[0].listing.id).toBe("3"); // earlier deadline
+    expect(res.ranked[1].listing.slug).toBe("alpha-slug");
+    expect(res.ranked[2].listing.slug).toBe("beta-slug");
   });
 });

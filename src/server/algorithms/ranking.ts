@@ -8,23 +8,20 @@ export interface RankingListing {
   mode: "REMOTE" | "HYBRID" | "ONSITE"; stipend: number | null;
   skills: string[]; preferredSkills: string[]; roleTags: string[]; deadline: Date;
 }
-
 export interface CandidateProfile {
-  resumeSkills?: ReadonlySet<string>;
-  targetRoles?: string[];
+  resumeSkills?: ReadonlySet<string>; targetRoles?: string[];
   preferredMode?: "REMOTE" | "HYBRID" | "ONSITE" | null;
 }
-
 export interface RankingFilters {
-  minStipend?: number | null;
-  mode?: "REMOTE" | "HYBRID" | "ONSITE" | null;
+  minStipend?: number | null; mode?: "REMOTE" | "HYBRID" | "ONSITE" | null;
 }
-
 export interface RankedListing {
-  listing: RankingListing;
-  totalRank: number;
+  listing: RankingListing; totalRank: number;
   subScores: { match: number; roleFit: number; modeFit: number; urgency: number };
   reasons: string[];
+}
+export interface RankingResult {
+  ranked: RankedListing[]; hiddenNoStipend: number; resumeMissing: boolean;
 }
 
 /**
@@ -36,20 +33,24 @@ export function rankListings(
   profile: CandidateProfile,
   filters: RankingFilters,
   now: Date
-): RankedListing[] {
+): RankingResult {
   const ranked: RankedListing[] = [];
   const targetRoles = profile.targetRoles ?? [];
+  const resumeMissing = !profile.resumeSkills || profile.resumeSkills.size === 0;
+  let hiddenNoStipend = 0;
 
   for (const listing of listings) {
     const msLeft = listing.deadline.getTime() - now.getTime();
     if (msLeft < 0) continue; // Exclude expired listings
 
-    if (filters.minStipend != null && (listing.stipend == null || listing.stipend < filters.minStipend)) continue;
+    if (filters.minStipend != null) {
+      if (listing.stipend == null) { hiddenNoStipend++; continue; }
+      if (listing.stipend < filters.minStipend) continue;
+    }
     if (filters.mode != null && listing.mode !== filters.mode) continue;
 
     const reasons: string[] = [];
-    const hasResume = profile.resumeSkills && profile.resumeSkills.size > 0;
-    const match = hasResume
+    const match = !resumeMissing
       ? scoreMatch(profile.resumeSkills!, listing.skills, listing.preferredSkills).score / 100
       : (reasons.push("No resume uploaded"), 0);
 
@@ -67,12 +68,19 @@ export function rankListings(
     const totalRank = Math.round((WEIGHT_MATCH * match + WEIGHT_ROLE_FIT * roleOverlap + WEIGHT_MODE_FIT * modeFit + WEIGHT_URGENCY * urgency) * 1000) / 1000;
 
     ranked.push({
-      listing,
-      totalRank,
+      listing, totalRank,
       subScores: { match, roleFit: roleOverlap, modeFit, urgency: Math.round(urgency * 1000) / 1000 },
       reasons,
     });
   }
 
-  return ranked.sort((a, b) => b.totalRank - a.totalRank);
+  // Tie-breaks: totalRank desc -> deadline asc -> slug asc
+  ranked.sort((a, b) => {
+    if (b.totalRank !== a.totalRank) return b.totalRank - a.totalRank;
+    const dDiff = a.listing.deadline.getTime() - b.listing.deadline.getTime();
+    if (dDiff !== 0) return dDiff;
+    return a.listing.slug.localeCompare(b.listing.slug);
+  });
+
+  return { ranked, hiddenNoStipend, resumeMissing };
 }
