@@ -33,18 +33,23 @@ model Session {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  name          String?
-  email         String?       @unique
-  emailVerified DateTime?
-  image         String?
-  theme         String        @default("light")
-  accounts      Account[]
-  sessions      Session[]
-  applications  Application[]
-  resumes       Resume[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id               String            @id @default(cuid())
+  name             String?
+  email            String?           @unique
+  emailVerified    DateTime?
+  image            String?
+  theme            String            @default("light")
+  accounts         Account[]
+  sessions         Session[]
+  applications     Application[]
+  resumes          Resume[]
+  profile          UserProfile?
+  chatSessions     ChatSession[]
+  topicMastery     TopicMastery[]
+  practiceAttempts PracticeAttempt[]
+  studyPlans       StudyPlan[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model VerificationToken {
@@ -72,11 +77,14 @@ model Application {
   salary        String?
   location      String?
   jobType       String?
+  listingId     String?
+  listing       Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([userId])
   @@index([userId, status])
+  @@index([listingId])
 }
 
 model Resume {
@@ -100,4 +108,171 @@ enum Status {
   INTERVIEW
   OFFER
   REJECTED
+}
+
+// ---------------------------------------------------------------------------
+// Campus Career Pilot (hackathon) models
+// ---------------------------------------------------------------------------
+
+enum WorkMode {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum StudyTaskKind {
+  DSA
+  REVISION
+  RESUME
+  APPLICATION
+}
+
+model UserProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch        String?
+  year          Int?
+  cgpa          Float?
+  targetRoles   String[]
+  driveDate     DateTime?
+  hoursPerDay   Float     @default(2)
+  preferredMode WorkMode?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt DateTime      @default(now())
+  endedAt   DateTime?
+  summary   String?       @db.Text
+  messages  ChatMessage[]
+
+  @@index([userId, startedAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  content   String      @db.Text
+  toolCalls Json?
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+/// Seeded DSA practice question. `slug` keeps the seed idempotent.
+model Question {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  topic       String
+  difficulty  Difficulty
+  title       String
+  prompt      String            @db.Text
+  rubric      Json
+  companyTags String[]
+  attempts    PracticeAttempt[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([topic, difficulty])
+}
+
+model TopicMastery {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic        String
+  mastery      Float     @default(0)
+  box          Int       @default(0)
+  nextReviewAt DateTime?
+  attempts     Int       @default(0)
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, topic])
+  @@index([userId, nextReviewAt])
+}
+
+model PracticeAttempt {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer     String   @db.Text
+  /// { correctness, complexity, edgeCases } each 0-1, plus optional feedback
+  scores     Json
+  /// r = 0.5*correctness + 0.3*complexity + 0.2*edgeCases
+  score      Float
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, questionId])
+}
+
+/// Seeded internship listing. Stipend and deadline are illustrative (see sourceNote).
+model Listing {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  company         String
+  location        String
+  mode            WorkMode
+  /// Monthly stipend in INR
+  stipend         Int?
+  skills          String[]
+  preferredSkills String[]
+  roleTags        String[]
+  summary         String        @db.Text
+  deadline        DateTime
+  sourceNote      String
+  applications    Application[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([deadline])
+}
+
+model StudyPlan {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  driveDate   DateTime
+  hoursPerDay Float
+  active      Boolean     @default(true)
+  tasks       StudyTask[]
+  createdAt   DateTime    @default(now())
+
+  @@index([userId, active])
+}
+
+model StudyTask {
+  id      String        @id @default(cuid())
+  planId  String
+  plan    StudyPlan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  date    DateTime      @db.Date
+  kind    StudyTaskKind
+  topic   String?
+  title   String
+  minutes Int
+  done    Boolean       @default(false)
+
+  @@index([planId, date])
 }

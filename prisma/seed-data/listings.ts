@@ -1,0 +1,611 @@
+/**
+ * Seed internship listings (MG1).
+ *
+ * Company names, role types and skill sets are written by hand from public
+ * information about each company's intern / early-career hiring. Stipends and
+ * deadlines are ILLUSTRATIVE: deadlines are stored as offsets from the seed date
+ * so the urgency ranking (A2) keeps working in demos, and every listing carries
+ * a sourceNote saying so. Nothing here is an official job posting.
+ *
+ * Skill ids must exist in src/data/taxonomy.json (enforced by tests).
+ */
+
+export type SeedWorkMode = "REMOTE" | "HYBRID" | "ONSITE";
+
+export type RoleTag =
+  | "sde"
+  | "frontend"
+  | "backend"
+  | "fullstack"
+  | "data"
+  | "ml"
+  | "mobile"
+  | "devops"
+  | "cloud"
+  | "qa"
+  | "security"
+  | "embedded"
+  | "product"
+  | "design";
+
+export interface SeedListing {
+  slug: string;
+  title: string;
+  company: string;
+  location: string;
+  mode: SeedWorkMode;
+  /** Illustrative monthly stipend in INR */
+  stipend: number | null;
+  skills: string[];
+  preferredSkills: string[];
+  roleTags: RoleTag[];
+  summary: string;
+  /** Days after the seed date. Illustrative. */
+  deadlineInDays: number;
+}
+
+export const LISTING_SOURCE_NOTE =
+  "Illustrative listing written from public information about this company's intern hiring. Stipend and deadline are illustrative, not official. Check the company's careers page before applying.";
+
+export const listings: SeedListing[] = [
+  {
+    slug: "amazon-sde-intern-blr",
+    title: "Software Development Engineer Intern",
+    company: "Amazon",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 110000,
+    skills: ["dsa", "java", "oop", "problem-solving"],
+    preferredSkills: ["aws", "distributed-systems", "system-design"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Work in a product team on a scoped service or feature, from design doc to code review to launch. Selection typically leans on an online assessment and DSA-heavy interviews.",
+    deadlineInDays: 5,
+  },
+  {
+    slug: "amazon-aws-cloud-support-intern",
+    title: "Cloud Support Associate Intern (AWS)",
+    company: "Amazon Web Services",
+    location: "Hyderabad",
+    mode: "ONSITE",
+    stipend: 60000,
+    skills: ["aws", "linux", "computer-networks"],
+    preferredSkills: ["bash", "docker", "python"],
+    roleTags: ["cloud", "devops"],
+    summary:
+      "Help troubleshoot customer workloads across compute, storage and networking. Good fit for students who enjoy Linux, networking and debugging real systems.",
+    deadlineInDays: 12,
+  },
+  {
+    slug: "google-step-intern",
+    title: "STEP Intern (Software Engineering)",
+    company: "Google",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 100000,
+    skills: ["dsa", "cpp", "problem-solving"],
+    preferredSkills: ["python", "java", "unit-testing"],
+    roleTags: ["sde"],
+    summary:
+      "A programme aimed at early-year CS students: a host-led project with code reviews and mentorship. Interviews focus on coding and data structures.",
+    deadlineInDays: 3,
+  },
+  {
+    slug: "microsoft-swe-intern-hyd",
+    title: "Software Engineering Intern",
+    company: "Microsoft",
+    location: "Hyderabad",
+    mode: "HYBRID",
+    stipend: 95000,
+    skills: ["dsa", "csharp", "oop"],
+    preferredSkills: ["azure", "typescript", "system-design"],
+    roleTags: ["sde", "fullstack"],
+    summary:
+      "Build and ship a feature with a product group, with design reviews along the way. Coding rounds emphasise problem solving and clean, tested code.",
+    deadlineInDays: 9,
+  },
+  {
+    slug: "flipkart-sde-intern",
+    title: "SDE Intern",
+    company: "Flipkart",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 80000,
+    skills: ["dsa", "java", "oop"],
+    preferredSkills: ["spring-boot", "low-level-design", "mysql"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Work on backend services behind e-commerce flows such as catalogue, cart or payments. Expect a machine-coding or LLD round alongside DSA.",
+    deadlineInDays: 6,
+  },
+  {
+    slug: "razorpay-backend-intern",
+    title: "Backend Engineering Intern",
+    company: "Razorpay",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 70000,
+    skills: ["go", "rest-api", "sql"],
+    preferredSkills: ["microservices", "docker", "redis"],
+    roleTags: ["backend"],
+    summary:
+      "Contribute to payment APIs and internal tooling where correctness and reliability matter. Comfort with SQL and API design helps more than any one language.",
+    deadlineInDays: 14,
+  },
+  {
+    slug: "swiggy-sde-intern",
+    title: "Software Engineer Intern",
+    company: "Swiggy",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 75000,
+    skills: ["dsa", "java", "rest-api"],
+    preferredSkills: ["distributed-systems", "microservices", "redis"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Work on high-traffic services around ordering, delivery or discovery. Interviews usually include DSA plus a design or machine-coding discussion.",
+    deadlineInDays: 18,
+  },
+  {
+    slug: "zomato-frontend-intern",
+    title: "Frontend Engineering Intern",
+    company: "Zomato",
+    location: "Gurugram",
+    mode: "ONSITE",
+    stipend: 60000,
+    skills: ["javascript", "react", "css"],
+    preferredSkills: ["typescript", "nextjs", "responsive-design"],
+    roleTags: ["frontend"],
+    summary:
+      "Build consumer-facing UI with attention to performance on low-end phones and slow networks. A portfolio of shipped React work is a strong signal.",
+    deadlineInDays: 21,
+  },
+  {
+    slug: "phonepe-android-intern",
+    title: "Android Engineering Intern",
+    company: "PhonePe",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 70000,
+    skills: ["android", "kotlin", "oop"],
+    preferredSkills: ["jetpack-compose", "rest-api", "unit-testing"],
+    roleTags: ["mobile"],
+    summary:
+      "Work on Android features used at very large scale, where app size, startup time and reliability matter. Kotlin and Android fundamentals are expected.",
+    deadlineInDays: 10,
+  },
+  {
+    slug: "cred-fullstack-intern",
+    title: "Full-Stack Engineering Intern",
+    company: "CRED",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 80000,
+    skills: ["javascript", "react", "nodejs"],
+    preferredSkills: ["typescript", "postgresql", "ui-ux"],
+    roleTags: ["fullstack", "frontend"],
+    summary:
+      "Ship polished product features end to end with a strong design culture. Expect questions on both frontend craft and backend fundamentals.",
+    deadlineInDays: 25,
+  },
+  {
+    slug: "zerodha-backend-intern",
+    title: "Backend Developer Intern",
+    company: "Zerodha",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 50000,
+    skills: ["go", "postgresql", "linux"],
+    preferredSkills: ["python", "redis", "git"],
+    roleTags: ["backend"],
+    summary:
+      "Small, engineering-led team that values simple, well-understood systems. Open-source contributions and self-driven projects carry weight.",
+    deadlineInDays: 30,
+  },
+  {
+    slug: "atlassian-swe-intern",
+    title: "Software Engineer Intern",
+    company: "Atlassian",
+    location: "Bengaluru",
+    mode: "REMOTE",
+    stipend: 100000,
+    skills: ["dsa", "java", "oop"],
+    preferredSkills: ["aws", "react", "system-design"],
+    roleTags: ["sde", "fullstack"],
+    summary:
+      "Remote-friendly internship on collaboration products. Process typically includes a coding assessment, a code-design round and a values interview.",
+    deadlineInDays: 8,
+  },
+  {
+    slug: "adobe-mts-intern",
+    title: "Member of Technical Staff Intern",
+    company: "Adobe",
+    location: "Noida",
+    mode: "HYBRID",
+    stipend: 85000,
+    skills: ["dsa", "cpp", "oop"],
+    preferredSkills: ["javascript", "operating-systems", "computer-vision"],
+    roleTags: ["sde"],
+    summary:
+      "Work on creative or document products, often in C++ or JavaScript. Strong CS fundamentals (OS, OOP, DSA) are tested.",
+    deadlineInDays: 15,
+  },
+  {
+    slug: "goldman-sachs-engineering-intern",
+    title: "Engineering Summer Analyst",
+    company: "Goldman Sachs",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 90000,
+    skills: ["dsa", "java", "sql"],
+    preferredSkills: ["python", "statistics", "system-design"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Build software for trading, risk or internal platforms. Selection usually includes aptitude, coding and CS fundamentals, sometimes with probability questions.",
+    deadlineInDays: 4,
+  },
+  {
+    slug: "jpmorgan-software-intern",
+    title: "Software Engineer Program Intern",
+    company: "JPMorgan Chase",
+    location: "Hyderabad",
+    mode: "ONSITE",
+    stipend: 70000,
+    skills: ["java", "oop", "sql"],
+    preferredSkills: ["spring-boot", "aws", "agile"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Join an agile team building internal and client-facing systems. A hackathon-style or coding assessment is often part of the process.",
+    deadlineInDays: 20,
+  },
+  {
+    slug: "walmart-global-tech-sde-intern",
+    title: "Software Engineer Intern",
+    company: "Walmart Global Tech",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 85000,
+    skills: ["dsa", "java", "rest-api"],
+    preferredSkills: ["react", "microservices", "kubernetes"],
+    roleTags: ["sde", "fullstack"],
+    summary:
+      "Work on retail-scale systems for supply chain, e-commerce or stores. Interviews mix DSA with project deep-dives.",
+    deadlineInDays: 11,
+  },
+  {
+    slug: "uber-sde-intern",
+    title: "Software Engineer Intern",
+    company: "Uber",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 120000,
+    skills: ["dsa", "go", "problem-solving"],
+    preferredSkills: ["java", "distributed-systems", "system-design"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Work on real-time marketplace or mapping services. Coding rounds are DSA-heavy, often graphs and greedy problems.",
+    deadlineInDays: 2,
+  },
+  {
+    slug: "salesforce-amts-intern",
+    title: "Associate MTS Intern",
+    company: "Salesforce",
+    location: "Hyderabad",
+    mode: "HYBRID",
+    stipend: 80000,
+    skills: ["dsa", "java", "oop"],
+    preferredSkills: ["javascript", "sql", "rest-api"],
+    roleTags: ["sde", "fullstack"],
+    summary:
+      "Contribute to a CRM platform team with mentoring and code reviews. OOP and DSA fundamentals are central to the interviews.",
+    deadlineInDays: 16,
+  },
+  {
+    slug: "intuit-swe-intern",
+    title: "Software Engineer Intern",
+    company: "Intuit",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 90000,
+    skills: ["dsa", "java", "react"],
+    preferredSkills: ["aws", "spring-boot", "unit-testing"],
+    roleTags: ["sde", "fullstack"],
+    summary:
+      "Build features for finance and tax products with a strong testing culture. Expect a coding round plus a craft or design demo.",
+    deadlineInDays: 13,
+  },
+  {
+    slug: "oracle-server-tech-intern",
+    title: "Server Technology Intern",
+    company: "Oracle",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 55000,
+    skills: ["c", "dbms", "operating-systems"],
+    preferredSkills: ["cpp", "sql", "linux"],
+    roleTags: ["sde", "backend"],
+    summary:
+      "Work close to database internals or server infrastructure. DBMS, OS and C fundamentals matter more than framework experience.",
+    deadlineInDays: 27,
+  },
+  {
+    slug: "cisco-network-software-intern",
+    title: "Software Engineer Intern (Networking)",
+    company: "Cisco",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 60000,
+    skills: ["c", "computer-networks", "linux"],
+    preferredSkills: ["python", "cpp", "operating-systems"],
+    roleTags: ["sde", "embedded"],
+    summary:
+      "Work on networking software and tooling. Networking concepts (TCP/IP, routing) and C come up often in interviews.",
+    deadlineInDays: 19,
+  },
+  {
+    slug: "texas-instruments-embedded-intern",
+    title: "Embedded Software Intern",
+    company: "Texas Instruments",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 60000,
+    skills: ["embedded-systems", "c", "operating-systems"],
+    preferredSkills: ["matlab", "verilog", "python"],
+    roleTags: ["embedded"],
+    summary:
+      "Write and test firmware for microcontroller or analog products. Strong fit for ECE/EEE students with C and electronics fundamentals.",
+    deadlineInDays: 23,
+  },
+  {
+    slug: "qualcomm-hardware-intern",
+    title: "Hardware Engineering Intern (VLSI)",
+    company: "Qualcomm",
+    location: "Hyderabad",
+    mode: "ONSITE",
+    stipend: 65000,
+    skills: ["verilog", "vlsi"],
+    preferredSkills: ["c", "python", "bash"],
+    roleTags: ["embedded"],
+    summary:
+      "Support design or verification of chip blocks. Digital design fundamentals and Verilog are the core of the interview.",
+    deadlineInDays: 17,
+  },
+  {
+    slug: "nvidia-systems-software-intern",
+    title: "Systems Software Intern",
+    company: "NVIDIA",
+    location: "Pune",
+    mode: "ONSITE",
+    stipend: 90000,
+    skills: ["cpp", "operating-systems", "dsa"],
+    preferredSkills: ["concurrency", "linux", "deep-learning"],
+    roleTags: ["sde", "embedded"],
+    summary:
+      "Work on drivers, compilers or performance tooling. C++, OS internals and concurrency are commonly discussed.",
+    deadlineInDays: 22,
+  },
+  {
+    slug: "tcs-digital-intern",
+    title: "Digital Intern",
+    company: "Tata Consultancy Services",
+    location: "Chennai",
+    mode: "ONSITE",
+    stipend: 20000,
+    skills: ["java", "sql", "oop"],
+    preferredSkills: ["python", "aws", "agile"],
+    roleTags: ["sde"],
+    summary:
+      "Work on client projects inside a delivery team. Process usually starts with a national aptitude and coding test.",
+    deadlineInDays: 35,
+  },
+  {
+    slug: "infosys-specialist-programmer-intern",
+    title: "Specialist Programmer Intern",
+    company: "Infosys",
+    location: "Mysuru",
+    mode: "ONSITE",
+    stipend: 25000,
+    skills: ["dsa", "java", "problem-solving"],
+    preferredSkills: ["python", "sql", "competitive-programming"],
+    roleTags: ["sde"],
+    summary:
+      "A higher-track programme for strong coders, selected through a timed coding test. Competitive programming practice helps.",
+    deadlineInDays: 40,
+  },
+  {
+    slug: "wipro-cloud-intern",
+    title: "Cloud & Infrastructure Intern",
+    company: "Wipro",
+    location: "Pune",
+    mode: "HYBRID",
+    stipend: 18000,
+    skills: ["linux", "aws", "computer-networks"],
+    preferredSkills: ["azure", "terraform", "bash"],
+    roleTags: ["cloud", "devops"],
+    summary:
+      "Support cloud migration and infrastructure work for enterprise clients. Cloud certifications or labs are a plus.",
+    deadlineInDays: 45,
+  },
+  {
+    slug: "accenture-data-analyst-intern",
+    title: "Data Analyst Intern",
+    company: "Accenture",
+    location: "Mumbai",
+    mode: "HYBRID",
+    stipend: 25000,
+    skills: ["sql", "excel", "data-analysis"],
+    preferredSkills: ["power-bi", "python", "communication"],
+    roleTags: ["data"],
+    summary:
+      "Clean data, build dashboards and present findings to client teams. Clear communication matters as much as SQL.",
+    deadlineInDays: 28,
+  },
+  {
+    slug: "deloitte-cyber-intern",
+    title: "Cyber Security Intern",
+    company: "Deloitte",
+    location: "Hyderabad",
+    mode: "HYBRID",
+    stipend: 30000,
+    skills: ["cybersecurity", "computer-networks", "linux"],
+    preferredSkills: ["owasp", "python", "cryptography"],
+    roleTags: ["security"],
+    summary:
+      "Assist with security assessments and risk reviews. Networking and Linux basics, plus any CTF experience, help.",
+    deadlineInDays: 33,
+  },
+  {
+    slug: "mu-sigma-decision-scientist-intern",
+    title: "Decision Scientist Intern",
+    company: "Mu Sigma",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 30000,
+    skills: ["sql", "statistics", "data-analysis"],
+    preferredSkills: ["python", "excel", "problem-solving"],
+    roleTags: ["data"],
+    summary:
+      "Solve analytics problems for business clients, from framing to presentation. Aptitude and structured thinking are tested.",
+    deadlineInDays: 7,
+  },
+  {
+    slug: "fractal-ml-intern",
+    title: "Machine Learning Intern",
+    company: "Fractal Analytics",
+    location: "Gurugram",
+    mode: "HYBRID",
+    stipend: 45000,
+    skills: ["python", "machine-learning", "scikit-learn"],
+    preferredSkills: ["pandas", "statistics", "sql"],
+    roleTags: ["ml", "data"],
+    summary:
+      "Build and evaluate models for client use cases. Expect questions on ML basics, model evaluation and Python.",
+    deadlineInDays: 12,
+  },
+  {
+    slug: "sarvam-ai-research-intern",
+    title: "AI Research Engineering Intern",
+    company: "Sarvam AI",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 80000,
+    skills: ["python", "deep-learning", "pytorch"],
+    preferredSkills: ["nlp", "llm", "linux"],
+    roleTags: ["ml"],
+    summary:
+      "Work on language models and speech for Indian languages. Hands-on PyTorch projects and NLP experience stand out.",
+    deadlineInDays: 9,
+  },
+  {
+    slug: "freshworks-product-intern",
+    title: "Associate Product Manager Intern",
+    company: "Freshworks",
+    location: "Chennai",
+    mode: "HYBRID",
+    stipend: 50000,
+    skills: ["product-management", "communication", "data-analysis"],
+    preferredSkills: ["sql", "ui-ux", "agile"],
+    roleTags: ["product"],
+    summary:
+      "Help define and ship features for SaaS products: user research, specs and metrics. Case-style interviews are common.",
+    deadlineInDays: 26,
+  },
+  {
+    slug: "zoho-member-technical-staff-intern",
+    title: "Member Technical Staff Intern",
+    company: "Zoho",
+    location: "Chennai",
+    mode: "ONSITE",
+    stipend: 30000,
+    skills: ["dsa", "java", "problem-solving"],
+    preferredSkills: ["c", "sql", "oop"],
+    roleTags: ["sde"],
+    summary:
+      "Build product features across Zoho's suite. Known for multiple programming rounds that test logic more than degrees.",
+    deadlineInDays: 14,
+  },
+  {
+    slug: "browserstack-qa-automation-intern",
+    title: "QA Automation Intern",
+    company: "BrowserStack",
+    location: "Mumbai",
+    mode: "HYBRID",
+    stipend: 45000,
+    skills: ["test-automation", "javascript", "selenium"],
+    preferredSkills: ["ci-cd", "git", "unit-testing"],
+    roleTags: ["qa"],
+    summary:
+      "Automate test suites for web and mobile products. Experience with Selenium or Playwright and CI pipelines is valued.",
+    deadlineInDays: 31,
+  },
+  {
+    slug: "postman-api-platform-intern",
+    title: "Software Engineer Intern (API Platform)",
+    company: "Postman",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 70000,
+    skills: ["nodejs", "rest-api", "javascript"],
+    preferredSkills: ["typescript", "postman", "graphql"],
+    roleTags: ["backend", "fullstack"],
+    summary:
+      "Work on API tooling used by developers worldwide. A good grasp of HTTP and API design is essential.",
+    deadlineInDays: 24,
+  },
+  {
+    slug: "meesho-data-engineering-intern",
+    title: "Data Engineering Intern",
+    company: "Meesho",
+    location: "Bengaluru",
+    mode: "HYBRID",
+    stipend: 60000,
+    skills: ["sql", "python", "etl"],
+    preferredSkills: ["spark", "airflow", "aws"],
+    roleTags: ["data", "backend"],
+    summary:
+      "Build data pipelines that feed analytics and ML. SQL depth and Python scripting are the core requirements.",
+    deadlineInDays: 6,
+  },
+  {
+    slug: "groww-frontend-intern",
+    title: "Frontend Developer Intern",
+    company: "Groww",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 60000,
+    skills: ["react", "javascript", "html"],
+    preferredSkills: ["typescript", "nextjs", "redux"],
+    roleTags: ["frontend"],
+    summary:
+      "Build investing product UI where clarity and correctness matter. Expect JavaScript fundamentals and a UI build exercise.",
+    deadlineInDays: 37,
+  },
+  {
+    slug: "juspay-functional-intern",
+    title: "Software Developer Intern",
+    company: "Juspay",
+    location: "Bengaluru",
+    mode: "ONSITE",
+    stipend: 40000,
+    skills: ["dsa", "problem-solving", "javascript"],
+    preferredSkills: ["rest-api", "sql", "git"],
+    roleTags: ["sde", "fullstack"],
+    summary:
+      "Work on payment SDKs and backend systems; the team is known for functional programming. Hiring includes a coding hackathon.",
+    deadlineInDays: 19,
+  },
+  {
+    slug: "swiggy-product-design-intern",
+    title: "Product Design Intern",
+    company: "Swiggy",
+    location: "Remote",
+    mode: "REMOTE",
+    stipend: 40000,
+    skills: ["ui-ux", "figma", "communication"],
+    preferredSkills: ["html", "css", "product-management"],
+    roleTags: ["design", "product"],
+    summary:
+      "Design user flows and screens with product and engineering partners. A portfolio with case studies is required.",
+    deadlineInDays: 29,
+  },
+];

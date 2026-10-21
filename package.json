@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "db:migrate": "node -e \"const u=require('fs').readFileSync('.env.local','utf8').match(/DATABASE_URL=\\\"([^\\\"]+)\\\"/)?.[1];require('child_process').execSync('npx prisma migrate dev --url '+u,{stdio:'inherit'})\"",
     "db:generate": "npx prisma generate",
+    "db:seed": "tsx prisma/seed.ts",
     "db:studio": "node -e \"const u=require('fs').readFileSync('.env.local','utf8').match(/DATABASE_URL=\\\"([^\\\"]+)\\\"/)?.[1];require('child_process').execSync('npx prisma studio --url '+u,{stdio:'inherit'})\"",
     "mobile:build": "echo Skipping static build: Pointing directly to Vercel URL",
     "mobile:sync": "npx cap sync",
@@ -54,8 +55,12 @@
     "eslint-config-next": "16.2.7",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
