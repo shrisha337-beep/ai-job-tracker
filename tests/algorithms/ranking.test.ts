@@ -130,4 +130,48 @@ describe("A2: degraded mode without resume and tie-breaks", () => {
     expect(res.ranked[1].listing.slug).toBe("alpha-slug");
     expect(res.ranked[2].listing.slug).toBe("beta-slug");
   });
+
+  it("treats floating-point differences under 1e-9 as ties to run deadline and slug tie-breaks", () => {
+    const l1 = makeListing({
+      id: "tie-b",
+      slug: "zebra-corp-intern",
+      skills: ["python"],
+      roleTags: ["sde"],
+      deadline: new Date("2026-10-29T12:00:00Z"),
+    });
+    const l2 = makeListing({
+      id: "tie-a",
+      slug: "apex-systems-intern",
+      skills: ["python"],
+      roleTags: ["sde"],
+      deadline: new Date("2026-10-29T12:00:00Z"),
+    });
+
+    const res = rankListings(
+      [l1, l2],
+      { resumeSkills: new Set(["python"]), targetRoles: ["sde"] },
+      {},
+      NOW
+    );
+
+    expect(res.ranked[0].totalRank).toBe(res.ranked[1].totalRank);
+    expect(res.ranked[0].listing.slug).toBe("apex-systems-intern");
+    expect(res.ranked[1].listing.slug).toBe("zebra-corp-intern");
+  });
+
+  it("populates structured matchedSkills, missingSkills, and daysLeft on a known listing", () => {
+    const listing = makeListing({
+      skills: ["python", "docker", "fastapi"],
+      preferredSkills: ["kubernetes"],
+      deadline: new Date("2026-11-05T12:00:00Z"), // exactly 15 days from NOW (2026-10-21T12:00:00Z)
+    });
+    const profile = {
+      resumeSkills: new Set(["python", "kubernetes", "git"]),
+    };
+
+    const res = rankListings([listing], profile, {}, NOW);
+    expect(res.ranked[0].matchedSkills).toEqual(["python", "kubernetes"]);
+    expect(res.ranked[0].missingSkills).toEqual(["docker", "fastapi"]);
+    expect(res.ranked[0].daysLeft).toBe(15);
+  });
 });

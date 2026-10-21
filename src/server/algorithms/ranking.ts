@@ -170,8 +170,9 @@ export function rankListings(
   }
 
   entries.sort((a, b) => {
-    if (b.rawTotalRank !== a.rawTotalRank) {
-      return b.rawTotalRank - a.rawTotalRank;
+    const rankDiff = b.rawTotalRank - a.rawTotalRank;
+    if (Math.abs(rankDiff) > 1e-9) {
+      return rankDiff;
     }
     const deadlineDiff =
       a.item.listing.deadline.getTime() - b.item.listing.deadline.getTime();
