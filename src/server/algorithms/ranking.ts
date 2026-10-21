@@ -1,5 +1,6 @@
 import type { Listing, WorkMode } from "@prisma/client";
 import type { RoleTag } from "@/lib/role-tags";
+import { MS_PER_DAY } from "@/lib/time";
 import { scoreMatch } from "./matching";
 
 export const WEIGHT_MATCH = 0.5;
@@ -140,7 +141,7 @@ export function rankListings(
         ? 1.0
         : 0.0;
 
-    const daysLeft = msLeft / (1000 * 60 * 60 * 24);
+    const daysLeft = msLeft / MS_PER_DAY;
     const urgency = calculateUrgency(daysLeft);
 
     const rawTotalRank =

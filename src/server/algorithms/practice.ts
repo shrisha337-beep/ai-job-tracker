@@ -1,4 +1,5 @@
 import type { Difficulty, PracticeAttempt, Question, TopicMastery } from "@prisma/client";
+import { MS_PER_DAY } from "@/lib/time";
 import taxonomy from "@/data/taxonomy.json";
 
 // A3: Rubric weights and EMA alpha
@@ -17,6 +18,10 @@ export const LEITNER_SUCCESS_THRESHOLD = 0.7;
 export const LEITNER_MAX_BOX = 4;
 export const LEITNER_INTERVALS_DAYS = [1, 3, 7, 14, 30] as const;
 
+function clamp01(x: number): number {
+  return Math.min(1, Math.max(0, x));
+}
+
 const DIFFICULTY_RANKS: Record<Difficulty, number> = {
   EASY: 0,
   MEDIUM: 1,
@@ -24,12 +29,10 @@ const DIFFICULTY_RANKS: Record<Difficulty, number> = {
 };
 
 const TOPIC_WEIGHTS = new Map<string, number>(
-  (taxonomy.dsaTopics as { id: string; weight: number }[]).map((t) => [t.id, t.weight])
+  taxonomy.dsaTopics.map((t) => [t.id, t.weight])
 );
 
-const ALL_TOPIC_IDS: string[] = (
-  taxonomy.dsaTopics as { id: string }[]
-).map((t) => t.id);
+const ALL_TOPIC_IDS = Array.from(TOPIC_WEIGHTS.keys());
 
 export type PracticeQuestion = Pick<
   Question,
@@ -62,19 +65,17 @@ export function scoreAttempt(scores: {
   complexity: number;
   edgeCases: number;
 }): number {
-  const c = Math.min(1, Math.max(0, scores.correctness));
-  const comp = Math.min(1, Math.max(0, scores.complexity));
-  const edge = Math.min(1, Math.max(0, scores.edgeCases));
-  const raw = WEIGHT_CORRECTNESS * c + WEIGHT_COMPLEXITY * comp + WEIGHT_EDGE_CASES * edge;
-  return Math.round(raw * 10000) / 10000;
+  const c = clamp01(scores.correctness);
+  const comp = clamp01(scores.complexity);
+  const edge = clamp01(scores.edgeCases);
+  return WEIGHT_CORRECTNESS * c + WEIGHT_COMPLEXITY * comp + WEIGHT_EDGE_CASES * edge;
 }
 
 // A3: EMA mastery update: m' = m + 0.3 * (r - m)
 export function updateMastery(currentMastery: number, r: number): number {
-  const m = Math.min(1, Math.max(0, currentMastery));
-  const score = Math.min(1, Math.max(0, r));
-  const next = m + MASTERY_ALPHA * (score - m);
-  return Math.round(next * 10000) / 10000;
+  const m = clamp01(currentMastery);
+  const score = clamp01(r);
+  return m + MASTERY_ALPHA * (score - m);
 }
 
 // A4: Map mastery to target difficulty band
@@ -177,6 +178,6 @@ export function scheduleLeitnerReview(currentBox: number, r: number, now: Date) 
   const safeBox = Math.max(0, Math.min(LEITNER_MAX_BOX, currentBox || 0));
   const box = r >= LEITNER_SUCCESS_THRESHOLD ? Math.min(safeBox + 1, LEITNER_MAX_BOX) : 0;
   const intervalDays = LEITNER_INTERVALS_DAYS[box];
-  const nextReviewAt = new Date(now.getTime() + intervalDays * 86400000);
+  const nextReviewAt = new Date(now.getTime() + intervalDays * MS_PER_DAY);
   return { box, nextReviewAt, intervalDays };
 }
