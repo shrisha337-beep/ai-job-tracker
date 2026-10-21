@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import taxonomy from "@/data/taxonomy.json";
-import { listings, LISTING_SOURCE_NOTE } from "../../prisma/seed-data/listings";
+import { listings, LISTING_SOURCE_NOTE, ROLE_TAGS } from "../../prisma/seed-data/listings";
 import { questions } from "../../prisma/seed-data/questions";
 import { deadlineFromOffset } from "../../prisma/seed-data/dates";
 
@@ -56,6 +56,16 @@ describe("seed listings integrity", () => {
       }
       for (const skillId of listing.preferredSkills) {
         expect(validSkillIds.has(skillId), `Listing "${listing.slug}" has unknown preferredSkill "${skillId}"`).toBe(true);
+      }
+    }
+  });
+
+  it("every listing roleTag is a valid RoleTag", () => {
+    const validTags = new Set(ROLE_TAGS);
+    for (const listing of listings) {
+      expect(listing.roleTags.length).toBeGreaterThan(0);
+      for (const tag of listing.roleTags) {
+        expect(validTags.has(tag), `Listing "${listing.slug}" has invalid roleTag "${tag}"`).toBe(true);
       }
     }
   });
