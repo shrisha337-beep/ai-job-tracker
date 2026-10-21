@@ -8,41 +8,51 @@ import { getNextPracticeQuestion, submitPracticeAttempt } from "@/server/service
 
 const TEST_USER_ID = "test-user-service-suite-1";
 const TEST_EMAIL = "test-service-user@example.com";
+const TEST_USER_B_ID = "test-user-b-suite-1";
+const TEST_USER_B_EMAIL = "test-user-b@example.com";
 const NOW = new Date("2026-10-21T06:00:00Z");
 
-describe("Server Services Suite (demo-driven)", () => {
+const TEST_USERS = [TEST_USER_ID, TEST_USER_B_ID];
+
+async function cleanupTestData() {
+  await prisma.studyTask.deleteMany({ where: { plan: { userId: { in: TEST_USERS } } } });
+  await prisma.studyPlan.deleteMany({ where: { userId: { in: TEST_USERS } } });
+  await prisma.practiceAttempt.deleteMany({ where: { userId: { in: TEST_USERS } } });
+  await prisma.topicMastery.deleteMany({ where: { userId: { in: TEST_USERS } } });
+  await prisma.application.deleteMany({ where: { userId: { in: TEST_USERS } } });
+  await prisma.resume.deleteMany({ where: { userId: { in: TEST_USERS } } });
+  await prisma.userProfile.deleteMany({ where: { userId: { in: TEST_USERS } } });
+}
+
+describe.skipIf(!process.env.DATABASE_URL)("Server Services Suite (demo-driven)", () => {
   beforeAll(async () => {
-    // Ensure test user exists
+    // Ensure test users exist
     await prisma.user.upsert({
       where: { id: TEST_USER_ID },
       update: {},
       create: {
         id: TEST_USER_ID,
         email: TEST_EMAIL,
-        name: "Test Service Student",
+        name: "Test Service Student A",
       },
     });
 
-    // Clean up existing test data for this user
-    await prisma.studyTask.deleteMany({ where: { plan: { userId: TEST_USER_ID } } });
-    await prisma.studyPlan.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.practiceAttempt.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.topicMastery.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.application.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.resume.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.userProfile.deleteMany({ where: { userId: TEST_USER_ID } });
+    await prisma.user.upsert({
+      where: { id: TEST_USER_B_ID },
+      update: {},
+      create: {
+        id: TEST_USER_B_ID,
+        email: TEST_USER_B_EMAIL,
+        name: "Test Service Student B",
+      },
+    });
+
+    await cleanupTestData();
   });
 
   afterAll(async () => {
-    // Cleanup
-    await prisma.studyTask.deleteMany({ where: { plan: { userId: TEST_USER_ID } } });
-    await prisma.studyPlan.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.practiceAttempt.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.topicMastery.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.application.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.resume.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.userProfile.deleteMany({ where: { userId: TEST_USER_ID } });
-    await prisma.user.delete({ where: { id: TEST_USER_ID } }).catch(() => {});
+    await cleanupTestData();
+    await prisma.user.deleteMany({ where: { id: { in: TEST_USERS } } }).catch(() => {});
   });
 
   describe("1. resume service", () => {
@@ -119,6 +129,17 @@ describe("Server Services Suite (demo-driven)", () => {
       const list = await listTrackedApplications(TEST_USER_ID);
       expect(list.some((a) => a.id === app.id)).toBe(true);
     });
+
+    it("deduplicates: calling addTrackedApplication twice returns the existing application without creating a duplicate", async () => {
+      const listing = await prisma.listing.findFirstOrThrow();
+      const first = await addTrackedApplication(TEST_USER_ID, listing.id, "APPLIED");
+      const second = await addTrackedApplication(TEST_USER_ID, listing.id, "BOOKMARKED");
+
+      expect(second.id).toBe(first.id);
+      const list = await listTrackedApplications(TEST_USER_ID);
+      const matches = list.filter((a) => a.listingId === listing.id);
+      expect(matches.length).toBe(1);
+    });
   });
 
   describe("4. planner service", () => {
@@ -194,6 +215,35 @@ describe("Server Services Suite (demo-driven)", () => {
 
       // Verify active plan was automatically re-planned
       expect(attemptRes.updatedPlan).not.toBeNull();
+    });
+  });
+
+  describe("6. ownership isolation", () => {
+    it("User B cannot read User A's plan, attempts, tracked applications, or profile", async () => {
+      // 1. User B's active plan must not return User A's plan
+      const planB = await getActivePlan(TEST_USER_B_ID);
+      expect(planB).toBeNull();
+
+      // 2. User B's tracked applications must not contain User A's applications
+      const appsB = await listTrackedApplications(TEST_USER_B_ID);
+      expect(appsB).toEqual([]);
+
+      // 3. User B's resume scorecard must not see User A's resume
+      const resumeB = await getResumeScorecard(TEST_USER_B_ID);
+      expect(resumeB.hasResume).toBe(false);
+      expect(resumeB.scorecard).toBeNull();
+
+      // 4. User B cannot see User A's profile
+      const profileB = await prisma.userProfile.findUnique({
+        where: { userId: TEST_USER_B_ID },
+      });
+      expect(profileB).toBeNull();
+
+      // 5. User B cannot see User A's practice attempts
+      const attemptsB = await prisma.practiceAttempt.findMany({
+        where: { userId: TEST_USER_B_ID },
+      });
+      expect(attemptsB).toEqual([]);
     });
   });
 });

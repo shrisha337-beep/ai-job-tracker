@@ -34,7 +34,7 @@ export function readiness(input: ReadinessInput): ReadinessResult {
   const pipeline = clamp01(Math.max(0, input.applicationsLast14d) / PIPELINE_TARGET_APPLICATIONS);
   const adherence =
     input.tasksDue <= 0
-      ? 1.0
+      ? 0
       : clamp01(Math.max(0, input.tasksDone) / input.tasksDue);
 
   const rawScore =

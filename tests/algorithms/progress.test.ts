@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { readiness, type ReadinessInput } from "@/server/algorithms/progress";
 
 describe("A7: composite readiness heuristic calculation", () => {
-  it("all zero: returns score 15 when tasksDue is 0 (default adherence = 1.0)", () => {
-    // mastery: 0, match: 0, pipeline: 0, adherence: 1.0 (since tasksDue = 0)
-    // score = 100 * (0.35*0 + 0.35*0 + 0.15*0 + 0.15*1.0) = 15
+  it("all zero: returns score 0 when tasksDue is 0 (adherence = 0)", () => {
+    // mastery: 0, match: 0, pipeline: 0, adherence: 0 (since tasksDue = 0)
+    // score = 100 * (0.35*0 + 0.35*0 + 0.15*0 + 0.15*0) = 0
     const res = readiness({
       avgMastery: 0,
       bestMatchScore: 0,
@@ -13,12 +13,12 @@ describe("A7: composite readiness heuristic calculation", () => {
       tasksDue: 0,
     });
 
-    expect(res.score).toBe(15);
+    expect(res.score).toBe(0);
     expect(res.components).toEqual({
       mastery: 0,
       match: 0,
       pipeline: 0,
-      adherence: 1,
+      adherence: 0,
     });
   });
 
@@ -53,7 +53,7 @@ describe("A7: composite readiness heuristic calculation", () => {
     });
   });
 
-  it("adherence with 0 due defaults to 1.0", () => {
+  it("adherence with 0 due defaults to 0", () => {
     const res = readiness({
       avgMastery: 0.5,
       bestMatchScore: 70,
@@ -62,7 +62,7 @@ describe("A7: composite readiness heuristic calculation", () => {
       tasksDue: 0,
     });
 
-    expect(res.components.adherence).toBe(1.0);
+    expect(res.components.adherence).toBe(0);
   });
 
   it("pipeline cap: applicationsLast14d > 5 is capped at 1.0", () => {

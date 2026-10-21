@@ -14,6 +14,15 @@ export async function addTrackedApplication(
   listingId: string,
   status: Status = "BOOKMARKED"
 ) {
+  const existing = await prisma.application.findFirst({
+    where: { userId, listingId },
+    include: { listing: true },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
   });

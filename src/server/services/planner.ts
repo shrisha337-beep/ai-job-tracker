@@ -112,46 +112,52 @@ export async function createOrReplan(
     now
   );
 
-  const plan = await prisma.$transaction(async (tx) => {
-    if (existingPlan) {
-      await tx.studyTask.deleteMany({
-        where: { planId: existingPlan.id, done: false },
-      });
+  const plan = await prisma.$transaction(
+    async (tx) => {
+      if (existingPlan) {
+        await tx.studyTask.deleteMany({
+          where: { planId: existingPlan.id, done: false },
+        });
 
-      await tx.studyPlan.update({
-        where: { id: existingPlan.id },
-        data: { driveDate, hoursPerDay },
-      });
+        await tx.studyPlan.update({
+          where: { id: existingPlan.id },
+          data: { driveDate, hoursPerDay },
+        });
 
-      const newTasksToInsert = planResult.tasks.filter((t) => !t.done);
-      if (newTasksToInsert.length > 0) {
-        await tx.studyTask.createMany({
-          data: newTasksToInsert.map((t) => ({
-            planId: existingPlan.id,
-            date: t.date,
-            kind: t.kind,
-            topic: t.topic,
-            title: t.title,
-            minutes: t.minutes,
-            done: false,
-          })),
+        const newTasksToInsert = planResult.tasks.filter((t) => !t.done);
+        if (newTasksToInsert.length > 0) {
+          await tx.studyTask.createMany({
+            data: newTasksToInsert.map((t) => ({
+              planId: existingPlan.id,
+              date: t.date,
+              kind: t.kind,
+              topic: t.topic,
+              title: t.title,
+              minutes: t.minutes,
+              done: false,
+            })),
+          });
+        }
+
+        return tx.studyPlan.findUniqueOrThrow({
+          where: { id: existingPlan.id },
+          include: { tasks: { orderBy: { date: "asc" } } },
         });
       }
 
-      return tx.studyPlan.findUniqueOrThrow({
-        where: { id: existingPlan.id },
-        include: { tasks: { orderBy: { date: "asc" } } },
+      const created = await tx.studyPlan.create({
+        data: {
+          userId,
+          driveDate,
+          hoursPerDay,
+          active: true,
+        },
       });
-    }
 
-    return tx.studyPlan.create({
-      data: {
-        userId,
-        driveDate,
-        hoursPerDay,
-        active: true,
-        tasks: {
-          create: planResult.tasks.map((t) => ({
+      if (planResult.tasks.length > 0) {
+        await tx.studyTask.createMany({
+          data: planResult.tasks.map((t) => ({
+            planId: created.id,
             date: t.date,
             kind: t.kind,
             topic: t.topic,
@@ -159,11 +165,16 @@ export async function createOrReplan(
             minutes: t.minutes,
             done: t.done,
           })),
-        },
-      },
-      include: { tasks: { orderBy: { date: "asc" } } },
-    });
-  });
+        });
+      }
+
+      return tx.studyPlan.findUniqueOrThrow({
+        where: { id: created.id },
+        include: { tasks: { orderBy: { date: "asc" } } },
+      });
+    },
+    { timeout: 15000, maxWait: 5000 }
+  );
 
   return {
     planId: plan.id,

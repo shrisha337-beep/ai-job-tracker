@@ -96,37 +96,40 @@ export async function submitPracticeAttempt(
   const newMastery = updateMastery(prevMastery, score);
   const leitner = scheduleLeitnerReview(prevBox, score, now);
 
-  const attempt = await prisma.$transaction(async (tx) => {
-    const createdAttempt = await tx.practiceAttempt.create({
-      data: {
-        userId,
-        questionId: question.id,
-        answer: input.answer,
-        scores: input.scores,
-        score,
-      },
-    });
+  const attempt = await prisma.$transaction(
+    async (tx) => {
+      const createdAttempt = await tx.practiceAttempt.create({
+        data: {
+          userId,
+          questionId: question.id,
+          answer: input.answer,
+          scores: input.scores,
+          score,
+        },
+      });
 
-    await tx.topicMastery.upsert({
-      where: { userId_topic: { userId, topic: question.topic } },
-      update: {
-        mastery: newMastery,
-        box: leitner.box,
-        nextReviewAt: leitner.nextReviewAt,
-        attempts: { increment: 1 },
-      },
-      create: {
-        userId,
-        topic: question.topic,
-        mastery: newMastery,
-        box: leitner.box,
-        nextReviewAt: leitner.nextReviewAt,
-        attempts: 1,
-      },
-    });
+      await tx.topicMastery.upsert({
+        where: { userId_topic: { userId, topic: question.topic } },
+        update: {
+          mastery: newMastery,
+          box: leitner.box,
+          nextReviewAt: leitner.nextReviewAt,
+          attempts: { increment: 1 },
+        },
+        create: {
+          userId,
+          topic: question.topic,
+          mastery: newMastery,
+          box: leitner.box,
+          nextReviewAt: leitner.nextReviewAt,
+          attempts: 1,
+        },
+      });
 
-    return createdAttempt;
-  });
+      return createdAttempt;
+    },
+    { timeout: 15000, maxWait: 5000 }
+  );
 
   // Re-plan the active plan if one exists
   const activePlan = await prisma.studyPlan.findFirst({
