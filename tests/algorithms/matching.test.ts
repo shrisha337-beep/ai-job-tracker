@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import taxonomy from "@/data/taxonomy.json";
-import { extractSkillIds, scoreMatch, resolveSkillId } from "@/server/algorithms/matching";
+import {
+  extractSkillIds,
+  scoreMatch,
+  resolveSkillId,
+  SPECIAL_MATCH_IDS,
+} from "@/server/algorithms/matching";
 
 describe("A1: extractSkillIds regex and false-positive guards", () => {
   it("C++ must not also match c", () => {
@@ -32,9 +37,9 @@ describe("A1: extractSkillIds regex and false-positive guards", () => {
 
   it("Node.js, .NET and C# must each match exactly one skill", () => {
     const skills = extractSkillIds("Full-stack system using Node.js, .NET Core, and C# services");
-    // console.log("skills are:", Array.from(skills));
     expect(skills.has("nodejs")).toBe(true);
     expect(skills.has("dotnet")).toBe(true);
+    expect(skills.has("csharp")).toBe(true);
     expect(Array.from(skills).sort()).toEqual(["csharp", "dotnet", "nodejs"]);
   });
 
@@ -50,6 +55,40 @@ describe("A1: extractSkillIds regex and false-positive guards", () => {
     const skills = extractSkillIds("Statistical modeling with R and Python");
     expect(skills.has("r")).toBe(true);
   });
+
+  it("matches hyphenated skills like React-based", () => {
+    const skills = extractSkillIds("Developing modern React-based user interfaces");
+    expect(skills.has("react")).toBe(true);
+  });
+});
+
+describe("A1: taxonomy integrity and alias collisions", () => {
+  it("every special matcher ID exists in the taxonomy", () => {
+    const taxonomyIds = new Set(taxonomy.skills.map((s) => s.id));
+    for (const id of SPECIAL_MATCH_IDS) {
+      expect(taxonomyIds.has(id)).toBe(true);
+    }
+  });
+
+  it("no alias maps to two different IDs", () => {
+    const aliasOwner = new Map<string, string>();
+    for (const skill of taxonomy.skills) {
+      const keys = [skill.id, skill.name, ...skill.aliases].map((k) => k.toLowerCase().trim());
+      for (const key of keys) {
+        const existing = aliasOwner.get(key);
+        if (existing && existing !== skill.id) {
+          throw new Error(`Alias collision: "${key}" is claimed by both "${existing}" and "${skill.id}"`);
+        }
+        aliasOwner.set(key, skill.id);
+      }
+    }
+  });
+
+  it.each(taxonomy.skills)("skill '$id' resolves via name and extractSkillIds", (skill) => {
+    expect(resolveSkillId(skill.name)).toBe(skill.id);
+    const extracted = extractSkillIds(skill.name);
+    expect(extracted.has(skill.id)).toBe(true);
+  });
 });
 
 describe("A1: resolveSkillId", () => {
@@ -60,10 +99,15 @@ describe("A1: resolveSkillId", () => {
   });
 
   it("resolves known aliases case-insensitively", () => {
-    expect(resolveSkillId("Python 3")).toBe("python");
+    expect(resolveSkillId("python3")).toBe("python");
     expect(resolveSkillId("react.js")).toBe("react");
     expect(resolveSkillId("postgres")).toBe("postgresql");
     expect(resolveSkillId("Golang")).toBe("go");
+  });
+
+  it("resolves free-text phrases via fallback", () => {
+    expect(resolveSkillId("AWS Lambda")).toBe("aws-lambda");
+    expect(resolveSkillId("REST APIs")).toBe("rest-api");
   });
 
   it("returns null for unknown skills", () => {
@@ -86,15 +130,12 @@ describe("A1: scoreMatch calculations and grade boundaries", () => {
   });
 
   it("weights required (w=1.0) higher than preferred (w=0.5)", () => {
-    // 1 required (w=1) + 1 preferred (w=0.5) -> Total weight = 1.5
-    // Case A: matches required only -> 1.0 / 1.5 = 66.67% -> 67%
     const resA = scoreMatch(new Set(["python"]), ["python"], ["docker"]);
     expect(resA.score).toBe(67);
     expect(resA.grade).toBe("C");
     expect(resA.matched).toEqual(["python"]);
     expect(resA.missing).toEqual(["docker"]);
 
-    // Case B: matches preferred only -> 0.5 / 1.5 = 33.33% -> 33%
     const resB = scoreMatch(new Set(["docker"]), ["python"], ["docker"]);
     expect(resB.score).toBe(33);
     expect(resB.grade).toBe("F");
@@ -103,10 +144,8 @@ describe("A1: scoreMatch calculations and grade boundaries", () => {
   });
 
   it("handles unmapped skills without inflating denominator or crashing", () => {
-    // JD has 1 valid required + 1 unmapped required
     const res = scoreMatch(new Set(["python"]), ["python", "mystery-tech-101"], []);
     expect(res.unmapped).toEqual(["mystery-tech-101"]);
-    // Only 'python' is scored (1.0 / 1.0 = 100)
     expect(res.score).toBe(100);
     expect(res.grade).toBe("A");
   });
