@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { getResumeScorecard, uploadAndScoreResume } from "@/server/services/resume";
 import { rankUserInternships } from "@/server/services/internships";
@@ -48,12 +48,12 @@ describe.skipIf(!process.env.DATABASE_URL)("Server Services Suite (demo-driven)"
     });
 
     await cleanupTestData();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await cleanupTestData();
     await prisma.user.deleteMany({ where: { id: { in: TEST_USERS } } }).catch(() => {});
-  });
+  }, 30000);
 
   describe("1. resume service", () => {
     it("returns hasResume: false when student has no active resume", async () => {
@@ -245,5 +245,83 @@ describe.skipIf(!process.env.DATABASE_URL)("Server Services Suite (demo-driven)"
       });
       expect(attemptsB).toEqual([]);
     });
+  });
+
+  describe("7. demo-path integration test", () => {
+    it("executes full demo path: resume -> search -> tracker_add x2 -> plan 14d -> dsa_next -> dsa_evaluate (forced LLM failure)", async () => {
+      // Step 1: Resume upload & scorecard
+      const resumeText =
+        "Proficient in Python, TypeScript, React, Node.js, SQL, PostgreSQL, Docker, and AWS cloud.";
+      const resumeRes = await uploadAndScoreResume(TEST_USER_ID, "student_resume.txt", resumeText);
+      expect(resumeRes.hasResume).toBe(true);
+      expect(resumeRes.scorecard).not.toBeNull();
+
+      // Step 2: Internship search
+      const searchRes = await rankUserInternships(
+        TEST_USER_ID,
+        { targetRoles: ["sde", "backend"], limit: 5 } as any,
+        NOW
+      );
+      expect(searchRes.ranked.length).toBeGreaterThanOrEqual(2);
+      const top1 = searchRes.ranked[0].listing;
+      const top2 = searchRes.ranked[1].listing;
+
+      // Step 3: Tracker add x2
+      const app1 = await addTrackedApplication(TEST_USER_ID, top1.id, "APPLIED");
+      const app2 = await addTrackedApplication(TEST_USER_ID, top2.id, "BOOKMARKED");
+      expect(app1.id).toBeDefined();
+      expect(app2.id).toBeDefined();
+
+      const tracked = await listTrackedApplications(TEST_USER_ID);
+      expect(tracked.some((a) => a.id === app1.id)).toBe(true);
+      expect(tracked.some((a) => a.id === app2.id)).toBe(true);
+
+      // Step 4: Plan 14 days
+      const planRes = await createOrReplan(
+        TEST_USER_ID,
+        { days: 14, hoursPerDay: 2.0 },
+        NOW
+      );
+      expect(planRes.planId).toBeDefined();
+      expect(planRes.tasks.length).toBeGreaterThan(0);
+      expect(planRes.hoursPerDay).toBe(2.0);
+
+      // Step 5: DSA next question
+      const nextQ = await getNextPracticeQuestion(TEST_USER_ID, NOW);
+      expect(nextQ).not.toBeNull();
+      expect(nextQ?.question.id).toBeDefined();
+
+      // Step 6: DSA evaluate with LLM provider forced to fail (simulating 429/network failure)
+      const providerModule = await import("@/lib/llm/provider");
+      const spy = vi.spyOn(providerModule, "getLlmProvider").mockReturnValue({
+        name: "mock-fail-llm",
+        chat: vi.fn().mockRejectedValue(new Error("Simulated LLM rate limit or downtime")),
+      });
+
+      const { getTool } = await import("@/server/tools");
+      const evaluateTool = getTool("dsa_evaluate")!;
+
+      const answer = "def solve(arr):\n    # Two pointer traversal\n    left, right = 0, len(arr) - 1\n    return [left, right]\n    # Time: O(n), Space: O(1)";
+      const evalRes = await evaluateTool.handler(TEST_USER_ID, {
+        questionId: nextQ!.question.id,
+        answer,
+      });
+
+      expect(evalRes).toBeDefined();
+      expect(evalRes.text).toContain("Solution evaluated:");
+      expect(evalRes.structured.card.type).toBe("quiz_feedback");
+
+      const cardData = evalRes.structured.card.data as any;
+      expect(cardData.attemptId).toBeDefined();
+      expect(cardData.score).toBeGreaterThan(0);
+      expect(cardData.mastery).toBeGreaterThan(0);
+      expect(cardData.subScores).toBeDefined();
+      expect(cardData.subScores.correctness).toBeGreaterThan(0);
+      expect(cardData.subScores.complexity).toBeGreaterThan(0);
+      expect(cardData.feedback).toContain("Deterministic evaluation");
+      expect(cardData.studyPlanAdapted).toBe(true);
+
+      spy.mockRestore();
+    }, 60000);
   });
 });

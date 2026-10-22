@@ -42,6 +42,14 @@ export interface LlmProvider {
   chat(messages: LlmMessage[], tools?: LlmToolDefinition[]): Promise<LlmChatResponse>;
 }
 
+export class LlmRateLimitError extends Error {
+  readonly status = 429;
+  constructor(message = 'Rate limit exceeded (HTTP 429)') {
+    super(message);
+    this.name = 'LlmRateLimitError';
+  }
+}
+
 export class OpenAiProvider implements LlmProvider {
   readonly name = 'openai';
   private readonly defaultModel = 'gpt-4o-mini';
@@ -125,6 +133,15 @@ export class OpenAiProvider implements LlmProvider {
           } catch {
             if (errText) errMsg += `: ${errText.slice(0, 100)}`;
           }
+
+          if (res.status === 429) {
+            if (attempt < this.maxRetries) {
+              await new Promise((r) => setTimeout(r, 2000));
+              continue;
+            }
+            throw new LlmRateLimitError(errMsg);
+          }
+
           throw new Error(errMsg);
         }
 
@@ -155,6 +172,9 @@ export class OpenAiProvider implements LlmProvider {
         };
       } catch (err: any) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        if (lastError instanceof LlmRateLimitError) {
+          throw lastError;
+        }
         if (attempt < this.maxRetries) {
           await new Promise((r) => setTimeout(r, 500));
         }
