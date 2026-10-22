@@ -45,8 +45,13 @@ next-env.d.ts
 PROJECT_DOCUMENTATION.md
 *.apk
 
-# internal planning docs (never push to public repo)
+# local planning/notes (never commit)
 decision.md
 flow.md
-Campus Career Pilot*.md
-
+PRD*.md
+*Blueprint*.md
+*Implementation*Plan*.md
+implementation_plan.md
+walkthrough.md
+task.md
+docs-private/
