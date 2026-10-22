@@ -34,9 +34,9 @@ export interface McpTokenPayload {
 }
 
 /**
- * Mints or seeds a 14-day bearer token for demo-judge@careerpilot.internal.
+ * Mints or seeds a 60-day bearer token for demo-judge@careerpilot.internal.
  */
-export async function mintDemoJudgeToken(expirationDays = 14): Promise<{
+export async function mintDemoJudgeToken(expirationDays = 60): Promise<{
   token: string;
   userId: string;
   email: string;

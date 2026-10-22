@@ -2,10 +2,10 @@
 /**
  * scripts/mint-demo-token.ts
  *
- * Mints a 14-day scoped Bearer JWT token for Hackathon judges:
+ * Mints a 60-day scoped Bearer JWT token for Hackathon judges:
  * - Target User: demo-judge@careerpilot.internal (auto-seeded if missing)
  * - Scope: mcp:read mcp:write
- * - Expiration: 14 days
+ * - Expiration: 60 days
  *
  * Usage:
  *   npx tsx scripts/mint-demo-token.ts
@@ -25,13 +25,13 @@ async function main() {
   console.log("================================================================================");
 
   try {
-    const { token, userId, email, expiresIn } = await mintDemoJudgeToken(14);
+    const { token, userId, email, expiresIn } = await mintDemoJudgeToken(60);
 
     console.log(`\n[✓] Successfully provisioned judge identity and minted access token:`);
     console.log(`    User ID:    ${userId}`);
     console.log(`    Email:      ${email}`);
     console.log(`    Scope:      ${MCP_DEFAULT_SCOPE}`);
-    console.log(`    Validity:   ${expiresIn} (14 days)`);
+    console.log(`    Validity:   ${expiresIn} (60 days)`);
 
     console.log(`\n--------------------------------------------------------------------------------`);
     console.log(`BEARER TOKEN (Copy below for Devpost judging / MCP clients):`);

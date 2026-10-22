@@ -22,7 +22,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SUPPORTED_PROTOCOL_VERSIONS } from "@modelcontextprotocol/sdk/types.js";
 
-const DEFAULT_SERVER_URL = process.env.MCP_SERVER_URL || "http://localhost:3000/api/mcp";
+const DEFAULT_SERVER_URL = process.env.MCP_URL || process.env.MCP_SERVER_URL || "http://localhost:3000/api/mcp";
 
 /**
  * Checks if a live Next.js dev server is reachable at the target endpoint.
@@ -172,7 +172,7 @@ async function runSmokeTest() {
     // Step 2: Mint judge token & connect client
     // -------------------------------------------------------------------------
     console.log("\n[2/4] Provisioning judge token and establishing Streamable HTTP transport...");
-    const { token, email } = await mintDemoJudgeToken(14);
+    const { token, email } = await mintDemoJudgeToken(60);
     console.log(`    Minted token for judge: ${email}`);
 
     const clientTransport = new StreamableHTTPClientTransport(new URL(targetUrl), {
@@ -236,14 +236,15 @@ async function runSmokeTest() {
     });
 
     console.log("    Tool call completed!");
-    console.log("    Result content items:", callResult.content?.length);
+    const content = (callResult as any).content as Array<{ type: string; text?: string }> | undefined;
+    console.log("    Result content items:", content?.length);
 
-    if (!callResult.content || callResult.content.length === 0) {
+    if (!content || content.length === 0) {
       throw new Error("Tool returned empty content array");
     }
 
-    const firstItem = callResult.content[0];
-    if (firstItem.type === "text") {
+    const firstItem = content[0];
+    if (firstItem.type === "text" && firstItem.text) {
       const parsed = JSON.parse(firstItem.text);
       console.log(`    Human-readable text summary: "${parsed.text}"`);
       console.log(`    Card type: "${parsed.structured?.card?.type}"`);

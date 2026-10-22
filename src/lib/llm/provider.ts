@@ -16,6 +16,7 @@ export interface LlmMessage {
   content: string;
   name?: string;
   toolCallId?: string;
+  toolCalls?: LlmToolCall[];
 }
 
 export interface LlmToolDefinition {
@@ -71,6 +72,20 @@ export class OpenAiProvider implements LlmProvider {
           role: 'tool',
           content: m.content,
           tool_call_id: m.toolCallId || 'call_default',
+        };
+      }
+      if (m.role === 'assistant' && m.toolCalls && m.toolCalls.length > 0) {
+        return {
+          role: 'assistant',
+          content: m.content || null,
+          tool_calls: m.toolCalls.map((tc) => ({
+            id: tc.id,
+            type: 'function',
+            function: {
+              name: tc.name,
+              arguments: JSON.stringify(tc.arguments),
+            },
+          })),
         };
       }
       return {

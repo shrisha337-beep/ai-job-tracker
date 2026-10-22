@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
-import { LayoutDashboard, Kanban, FileText, Settings, LogOut, Menu, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, Kanban, FileText, Settings, LogOut, Menu, ChevronLeft, Bot } from "lucide-react";
 import { JTLogo } from "./JTLogo";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -13,6 +13,11 @@ const navItems = [
     label: "Dashboard",
     href: "/dashboard",
     icon: <LayoutDashboard size={18} />,
+  },
+  {
+    label: "Assistant",
+    href: "/assistant",
+    icon: <Bot size={18} />,
   },
   {
     label: "Applications",

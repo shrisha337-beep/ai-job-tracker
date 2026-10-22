@@ -27,6 +27,56 @@ This repository is being extended during the Amazon Hackathon (Alexa+ simulated 
 
 ---
 
+## 🔌 Model Context Protocol (MCP) Server — Stage 1 Evidence
+
+Campus Career Pilot exposes an official Model Context Protocol (MCP) server over **Streamable HTTP** at `/api/mcp`, implementing the latest protocol specification **`2025-11-25`** via `@modelcontextprotocol/sdk`.
+
+### Runtime Verification & Smoke Test Evidence
+The endpoint is verified via `scripts/mcp-smoke.ts` and passes all required Stage 1 checks:
+1. **Unauthenticated rejection:** Rejects requests without Bearer tokens with **HTTP 401 Unauthorized**.
+2. **Protocol Negotiation:** Handshakes and negotiates protocol version **`2025-11-25`**.
+3. **Master Tool Registry:** Exposes all 8 domain tools (`resume_analyzer`, `internship_search`, `tracker_add`, `tracker_list`, `study_plan`, `dsa_next`, `dsa_evaluate`, `progress_summary`).
+4. **Tool Execution:** Executes tool calls and returns structured JSON cards alongside human-readable text.
+
+```text
+================================================================================
+ Campus Career Pilot — MCP Streamable HTTP Smoke Test
+================================================================================
+SDK Supported Protocol Versions: ["2025-11-25","2025-06-18","2025-03-26","2024-11-05","2024-10-07"]
+
+[1/4] Verifying 401 Unauthorized for unauthenticated requests...
+    Status received: 401 Unauthorized
+    Error payload: {"code":-32002,"message":"Unauthorized: Missing or invalid Bearer token. Obtain a token via scripts/mint-demo-token.ts"}
+    [✓] PASS: Unauthenticated request rejected with HTTP 401
+
+[2/4] Provisioning judge token and establishing Streamable HTTP transport...
+    Minted token for judge: demo-judge@careerpilot.internal
+    [✓] Connected! Negotiated Protocol Version: 2025-11-25
+    [✓] PASS: MCP Protocol version 2025-11-25 successfully negotiated
+
+[3/4] Calling tools/list...
+    Tools found (8): resume_analyzer, internship_search, tracker_add, tracker_list, study_plan, dsa_next, dsa_evaluate, progress_summary
+    [✓] PASS: All 8 tools registered and exposed over MCP
+
+[4/4] Executing tool call: dsa_next...
+    Tool call completed!
+    Result content items: 1
+    Human-readable text summary: "Next practice question: \"Best day to buy and sell once\" [EASY] on topic \"arrays\" (Priority: 1). Prompt: prices[i] is a stock's price on day i. You may buy once and sell once on a later day. Return the maximum profit, or 0 if no profit is possible."
+    Card type: "quiz_card"
+    [✓] PASS: Tool execution succeeded with structured output
+
+================================================================================
+ [✓] ALL MCP SMOKE TESTS PASSED SUCCESSFULLY
+================================================================================
+```
+
+### Judge Evaluation & Tool Inspection
+- **Mint Demo Token:** `npx tsx scripts/mint-demo-token.ts` (mints a 60-day token for `demo-judge@careerpilot.internal`).
+- **Reset Demo User State:** `npx tsx scripts/reset-demo-user.ts` (cleans test data before judging).
+- **Run Smoke Test:** `npx tsx scripts/mcp-smoke.ts` (supports `MCP_URL=https://<your-vercel-domain>/api/mcp`).
+
+---
+
 ## 📑 Table of Contents
 
 - [✨ Features](#-features)

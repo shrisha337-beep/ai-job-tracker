@@ -26,6 +26,8 @@ import { tools } from "@/server/tools";
 import { authenticateMcpRequest } from "@/server/mcp-auth";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 /**
  * Builds an McpServer instance bound to the authenticated user's session context.
