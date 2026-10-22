@@ -27,7 +27,14 @@ const SYSTEM_PROMPT = `You are Campus Career Pilot Assistant, an intelligent car
 Strict Invariants:
 1. Numbers and metrics come ONLY from tool outputs; show sub-scores and underlying reasons for every metric.
 2. Never invent or hallucinate a score, job listing, practice question, or deadline.
-3. When answering questions regarding resume match, internships, study plans, DSA practice, or readiness, ALWAYS call the corresponding tool.
+3. When answering questions regarding resume match, internships, study plans, DSA practice, or readiness, ALWAYS call the corresponding tool:
+   - For next DSA question or coding challenge: ALWAYS call dsa_next (never call progress_summary for DSA challenges).
+   - For readiness score or overall preparedness: call progress_summary.
+   - For resume fit/skills: call resume_analyzer.
+   - For internship search: call internship_search.
+   - For tracker/applications: call tracker_list or tracker_add.
+   - For daily preparation plan: call study_plan.
+   - For evaluating a DSA answer: call dsa_evaluate.
 4. After dsa_evaluate is called, explicitly explain what changed in the study plan, Leitner box level, or mastery score.
 Keep your responses helpful, structured, concise, and actionable.`;
 
@@ -69,12 +76,15 @@ export async function POST(req: Request): Promise<Response> {
   let crossSessionHistory: LlmMessage[] = [];
 
   if (!chatSession) {
-    // New session: fetch last 10 messages of the previous session for memory
+    // New session: preload ONLY plain USER and ASSISTANT text messages from the previous session
     const prevSession = await prisma.chatSession.findFirst({
       where: { userId },
       orderBy: { startedAt: "desc" },
       include: {
         messages: {
+          where: {
+            role: { in: ["USER", "ASSISTANT"] },
+          },
           orderBy: { createdAt: "desc" },
           take: 10,
         },
@@ -83,27 +93,34 @@ export async function POST(req: Request): Promise<Response> {
 
     if (prevSession && prevSession.messages.length > 0) {
       const sortedPrev = [...prevSession.messages].reverse();
-      crossSessionHistory = sortedPrev.map((m) => ({
-        role: m.role.toLowerCase() as "user" | "assistant" | "tool",
-        content: m.content,
-      }));
+      crossSessionHistory = sortedPrev
+        .filter((m) => (m.role === "USER" || m.role === "ASSISTANT") && Boolean(m.content?.trim()))
+        .map((m) => ({
+          role: m.role.toLowerCase() as "user" | "assistant",
+          content: m.content.trim(),
+        }));
     }
 
     chatSession = await prisma.chatSession.create({
       data: { userId },
     });
   } else {
-    // Existing session: fetch recent history
+    // Existing session: preload ONLY plain USER and ASSISTANT text messages
     const existingMessages = await prisma.chatMessage.findMany({
-      where: { sessionId: chatSession.id },
+      where: {
+        sessionId: chatSession.id,
+        role: { in: ["USER", "ASSISTANT"] },
+      },
       orderBy: { createdAt: "asc" },
       take: 20,
     });
 
-    crossSessionHistory = existingMessages.map((m) => ({
-      role: m.role.toLowerCase() as "user" | "assistant" | "tool",
-      content: m.content,
-    }));
+    crossSessionHistory = existingMessages
+      .filter((m) => (m.role === "USER" || m.role === "ASSISTANT") && Boolean(m.content?.trim()))
+      .map((m) => ({
+        role: m.role.toLowerCase() as "user" | "assistant",
+        content: m.content.trim(),
+      }));
   }
 
   // Persist incoming user message
@@ -208,16 +225,6 @@ export async function POST(req: Request): Promise<Response> {
               name: call.name,
               toolCallId: call.id,
             });
-
-            // Persist tool message
-            await prisma.chatMessage.create({
-              data: {
-                sessionId: chatSession.id,
-                role: "TOOL",
-                content: toolText,
-                toolCalls: { id: call.id, name: call.name, arguments: call.arguments } as any,
-              },
-            });
           }
         } else {
           // Final assistant textual response
@@ -258,6 +265,13 @@ export async function POST(req: Request): Promise<Response> {
 
       await sendEvent("done", { sessionId: chatSession.id });
     } catch (err: unknown) {
+      console.error("[assistant:chat] Error in turn loop:", {
+        name: (err as any)?.name || (err instanceof Error ? err.name : "UnknownError"),
+        message: err instanceof Error ? err.message : String(err),
+        status: (err as any)?.status,
+        providerResponse: (err as any)?.responseBody || (err as any)?.response || (err as any)?.data,
+      });
+
       const isRateLimit =
         err instanceof LlmRateLimitError ||
         (err as any)?.status === 429 ||

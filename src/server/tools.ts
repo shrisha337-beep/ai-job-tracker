@@ -99,14 +99,15 @@ export const resumeAnalyzerTool: ToolDefinition = {
 // -----------------------------------------------------------------------------
 
 const internshipSearchSchema = z.object({
-  mode: z.enum(["REMOTE", "HYBRID", "ONSITE"]).optional().describe("Filter by work mode: REMOTE, HYBRID, or ONSITE"),
-  minStipend: z.number().min(0).max(500000).optional().describe("Minimum monthly stipend in INR (e.g. 20000)"),
+  mode: z.enum(["REMOTE", "HYBRID", "ONSITE"]).nullable().optional().describe("Filter by work mode: REMOTE, HYBRID, or ONSITE"),
+  minStipend: z.number().min(0).max(500000).nullable().optional().describe("Minimum monthly stipend in INR (e.g. 20000)"),
   targetRoles: z
     .array(z.enum(ROLE_TAGS as unknown as [string, ...string[]]))
+    .nullable()
     .optional()
     .describe("Filter by one or more target roles: sde, backend, frontend, ml, devops, etc."),
-  preferredMode: z.enum(["REMOTE", "HYBRID", "ONSITE"]).optional().describe("Update preferred work mode in user profile"),
-  limit: z.number().int().min(1).max(5).default(5).describe("Maximum number of results to return (1-5, default 5)"),
+  preferredMode: z.enum(["REMOTE", "HYBRID", "ONSITE"]).nullable().optional().describe("Update preferred work mode in user profile"),
+  limit: z.number().int().min(1).max(5).default(5).nullable().optional().describe("Maximum number of results to return (1-5, default 5)"),
 });
 
 export const internshipSearchTool: ToolDefinition<typeof internshipSearchSchema> = {
@@ -115,12 +116,12 @@ export const internshipSearchTool: ToolDefinition<typeof internshipSearchSchema>
     "Searches and ranks internship listings for the user using personalized match scoring (A2 ranking: 50% resume match, 20% role fit, 15% mode fit, 15% deadline urgency). Use when the user asks for internship or job recommendations, wants to browse open roles, or filters by stipend/mode/role.",
   inputSchema: internshipSearchSchema,
   handler: async (userId: string, args): Promise<ToolResult> => {
-    const limit = Math.min(5, args.limit ?? 5);
+    const limit = Math.min(5, args?.limit ?? 5);
     const rankingResult = await rankUserInternships(userId, {
-      mode: args.mode,
-      minStipend: args.minStipend,
-      targetRoles: args.targetRoles as RoleTag[] | undefined,
-      preferredMode: args.preferredMode,
+      mode: args?.mode ?? undefined,
+      minStipend: args?.minStipend ?? undefined,
+      targetRoles: (args?.targetRoles as RoleTag[] | null | undefined) ?? undefined,
+      preferredMode: args?.preferredMode ?? undefined,
     });
 
     const topRanked = rankingResult.ranked.slice(0, limit);
@@ -220,6 +221,7 @@ export const trackerAddTool: ToolDefinition<typeof trackerAddSchema> = {
 const trackerListSchema = z.object({
   status: z
     .enum(["BOOKMARKED", "APPLIED", "SCREENING", "INTERVIEW", "OFFER", "REJECTED"])
+    .nullable()
     .optional()
     .describe("Optional filter by status"),
 });
@@ -231,7 +233,7 @@ export const trackerListTool: ToolDefinition<typeof trackerListSchema> = {
   inputSchema: trackerListSchema,
   handler: async (userId: string, args): Promise<ToolResult> => {
     const apps = await listTrackedApplications(userId);
-    const filtered = args.status ? apps.filter((a) => a.status === args.status) : apps;
+    const filtered = args?.status ? apps.filter((a) => a.status === args.status) : apps;
 
     const countsByStatus: Record<string, number> = {};
     for (const a of apps) {
@@ -255,7 +257,7 @@ export const trackerListTool: ToolDefinition<typeof trackerListSchema> = {
     const sampleSummary = displayApps.map((a) => `${a.role} at ${a.company} (${a.status})`).join("; ");
 
     return {
-      text: `You have ${filtered.length} tracked applications${args.status ? ` under status ${args.status}` : ""}. Pipeline breakdown: ${countsSummary || "none"}. Recent entries: ${sampleSummary || "None"}.`,
+      text: `You have ${filtered.length} tracked applications${args?.status ? ` under status ${args.status}` : ""}. Pipeline breakdown: ${countsSummary || "none"}. Recent entries: ${sampleSummary || "None"}.`,
       structured: {
         card: {
           type: "tracker_list",
@@ -275,8 +277,8 @@ export const trackerListTool: ToolDefinition<typeof trackerListSchema> = {
 // -----------------------------------------------------------------------------
 
 const studyPlanSchema = z.object({
-  days: z.number().int().min(1).max(30).optional().describe("Number of preparation days until the target placement drive (1-30)"),
-  hoursPerDay: z.number().min(0.5).max(12).optional().describe("Dedicated preparation hours available per day (0.5 to 12.0)"),
+  days: z.number().int().min(1).max(30).nullable().optional().describe("Number of preparation days until the target placement drive (1-30)"),
+  hoursPerDay: z.number().min(0.5).max(12).nullable().optional().describe("Dedicated preparation hours available per day (0.5 to 12.0)"),
 });
 
 export const studyPlanTool: ToolDefinition<typeof studyPlanSchema> = {
@@ -286,8 +288,8 @@ export const studyPlanTool: ToolDefinition<typeof studyPlanSchema> = {
   inputSchema: studyPlanSchema,
   handler: async (userId: string, args): Promise<ToolResult> => {
     const plan = await createOrReplan(userId, {
-      days: args.days,
-      hoursPerDay: args.hoursPerDay,
+      days: args?.days ?? undefined,
+      hoursPerDay: args?.hoursPerDay ?? undefined,
     });
 
     const tasksCount = plan.tasks.length;
@@ -296,7 +298,7 @@ export const studyPlanTool: ToolDefinition<typeof studyPlanSchema> = {
     const firstTaskText = firstTask ? ` Next scheduled task: ${firstTask.title} (${firstTask.minutes} mins).` : "";
 
     return {
-      text: `Created study plan with ${tasksCount} tasks across ${args.days ?? 14} days (${plan.hoursPerDay} hrs/day target).${overCapText}${firstTaskText}`,
+      text: `Created study plan with ${tasksCount} tasks across ${args?.days ?? 14} days (${plan.hoursPerDay} hrs/day target).${overCapText}${firstTaskText}`,
       structured: {
         card: {
           type: "study_plan",
@@ -320,15 +322,15 @@ export const studyPlanTool: ToolDefinition<typeof studyPlanSchema> = {
 // -----------------------------------------------------------------------------
 
 const dsaNextSchema = z.object({
-  topic: z.string().optional().describe("Optional DSA topic filter (e.g. arrays, trees, dp, graphs)"),
+  topic: z.string().nullable().optional().describe("Optional DSA topic filter (e.g. arrays, trees, dp, graphs)"),
 });
 
 export const dsaNextTool: ToolDefinition<typeof dsaNextSchema> = {
   name: "dsa_next",
   description:
-    "Selects the optimal next DSA practice problem for the user based on mastery weaknesses and due Leitner revision schedules (A4 selection). Use when the user wants to practice a coding question or test their DSA skills.",
+    "Selects the optimal next DSA practice problem for the user based on mastery weaknesses and due Leitner revision schedules (A4 selection). ALWAYS use this tool when the user asks for their next DSA question, coding problem, practice challenge, or wants to solve a problem on their weakest topic. Do NOT call progress_summary for DSA challenges.",
   inputSchema: dsaNextSchema,
-  handler: async (userId: string): Promise<ToolResult> => {
+  handler: async (userId: string, _args?: { topic?: string | null }): Promise<ToolResult> => {
     const next = await getNextPracticeQuestion(userId);
 
     if (!next) {
@@ -450,7 +452,7 @@ export const dsaEvaluateTool: ToolDefinition<typeof dsaEvaluateSchema> = {
 export const progressSummaryTool: ToolDefinition = {
   name: "progress_summary",
   description:
-    "Returns an executive summary of the user's placement readiness score (A7 composite: 35% topic mastery, 35% best match score, 15% 14-day pipeline activity, 15% plan adherence) along with topic mastery overview, pipeline statistics, and study plan progress. Use when the user asks 'How prepared am I?', 'Show my readiness score', or asks for an overall progress check.",
+    "Returns an executive summary of the user's placement readiness score (A7 composite: 35% topic mastery, 35% best match score, 15% 14-day pipeline activity, 15% plan adherence) along with pipeline statistics and study plan progress. Use ONLY when the user asks 'How prepared am I?', 'Show my readiness score', or asks for an overall progress check. Do NOT use when the user asks for a DSA question, challenge, or problem to solve.",
   inputSchema: z.object({}),
   handler: async (userId: string): Promise<ToolResult> => {
     const summary = await getProgressSummary(userId);

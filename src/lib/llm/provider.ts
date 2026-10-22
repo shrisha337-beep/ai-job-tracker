@@ -154,10 +154,16 @@ export class OpenAiProvider implements LlmProvider {
               await new Promise((r) => setTimeout(r, 2000));
               continue;
             }
-            throw new LlmRateLimitError(errMsg);
+            const err = new LlmRateLimitError(errMsg);
+            (err as any).status = 429;
+            (err as any).responseBody = errText;
+            throw err;
           }
 
-          throw new Error(errMsg);
+          const err = new Error(errMsg);
+          (err as any).status = res.status;
+          (err as any).responseBody = errText;
+          throw err;
         }
 
         const data = await res.json();
