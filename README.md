@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 Campus Career Copilot
+# Campus Career Copilot
 
 ### AI-Powered Placement Prep, MCP Server & Job Tracking Platform
 
@@ -9,34 +9,180 @@
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech/)
-[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
+[![Groq](https://img.shields.io/badge/Groq-LLM_Provider-F55036?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://console.groq.com/)
 [![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-**Manage your entire job search pipeline — from bookmarking roles to landing offers — with an interactive Kanban board, AI-powered JD parsing, and resume match scoring.**
+**Manage your entire job search pipeline — from bookmarking roles to landing offers — with an interactive Kanban board, an AI assistant that calls 8 domain tools, adaptive DSA practice with Leitner spaced repetition, and a Model Context Protocol server for IDE integrations.**
 
-[🐛 Report Bug](https://github.com/shrisha337-beep/ai-job-tracker/issues) · [✨ Request Feature](https://github.com/shrisha337-beep/ai-job-tracker/issues)
+[Report Bug](https://github.com/shrisha337-beep/ai-job-tracker/issues) · [Request Feature](https://github.com/shrisha337-beep/ai-job-tracker/issues)
 
 </div>
 
 ---
 
-## 🏆 Amazon Hackathon (20–23 Oct 2026)
+## System Architecture
 
-This repository is being extended during the Amazon Hackathon (Alexa+ simulated track · AWS Builder · Open Source). The pre-hackathon state is tagged as [`v1-baseline`](../../tree/v1-baseline). Every change made during the hackathon is logged with commit references in [`HACKATHON_CHANGELOG.md`](HACKATHON_CHANGELOG.md).
+```mermaid
+graph TB
+    subgraph Client["Browser / Mobile Client"]
+        UI["Next.js App Router<br/>React + Tailwind CSS"]
+        Chat["Assistant Chat Panel<br/>SSE Streaming"]
+    end
+
+    subgraph Edge["Vercel Edge / Node.js Runtime"]
+        Auth["NextAuth.js<br/>Google OAuth"]
+        API["API Routes"]
+        MCP["MCP Server<br/>/api/mcp<br/>Streamable HTTP"]
+        ChatRoute["Chat Route<br/>/api/assistant/chat"]
+    end
+
+    subgraph AI["AI Agent Loop"]
+        LLM["Groq LLM<br/>openai/gpt-oss-120b"]
+        Tools["Tool Registry<br/>8 Domain Tools"]
+        Grading["Grading Service<br/>Zod + Keyword Fallback"]
+    end
+
+    subgraph Services["Domain Services"]
+        Resume["Resume Service<br/>Skill Extraction"]
+        Internship["Internship Service<br/>Multi-Factor Ranking"]
+        Tracker["Tracker Service<br/>Application Pipeline"]
+        Planner["Planner Service<br/>Adaptive Scheduling"]
+        Practice["Practice Service<br/>Leitner Spaced Repetition"]
+        Progress["Progress Service<br/>Readiness Scoring"]
+    end
+
+    subgraph Data["Data Layer"]
+        Prisma["Prisma ORM v7<br/>pg driver adapter"]
+        DB[("Neon PostgreSQL<br/>Serverless")]
+        Taxonomy["taxonomy.json<br/>Skills + Questions"]
+        Listings["Seeded Listings<br/>30+ Internships"]
+    end
+
+    UI --> Auth
+    UI --> API
+    Chat --> ChatRoute
+    ChatRoute --> LLM
+    LLM -->|"tool_calls"| Tools
+    Tools -->|"tool results"| LLM
+    LLM -->|"final response"| ChatRoute
+    Tools --> Services
+    MCP --> Tools
+    Services --> Prisma
+    Prisma --> DB
+    Resume --> Taxonomy
+    Practice --> Taxonomy
+    Internship --> Listings
+    Grading --> LLM
+
+    style Client fill:#1a1a2e,stroke:#e94560,color:#eee
+    style Edge fill:#16213e,stroke:#0f3460,color:#eee
+    style AI fill:#0f3460,stroke:#533483,color:#eee
+    style Services fill:#533483,stroke:#e94560,color:#eee
+    style Data fill:#1a1a2e,stroke:#e94560,color:#eee
+```
 
 ---
 
-## 🔌 Model Context Protocol (MCP) Server — Stage 1 Evidence
+## Agent Tool-Call Loop
 
-Campus Career Copilot exposes an official Model Context Protocol (MCP) server over **Streamable HTTP** at `/api/mcp`, implementing the latest protocol specification **`2025-11-25`** via `@modelcontextprotocol/sdk`.
+Every chat message triggers a multi-step agent loop. The LLM decides which tools to invoke, executes them server-side, and synthesizes a final response.
 
-### Runtime Verification & Smoke Test Evidence
-The endpoint is verified via `scripts/mcp-smoke.ts` and passes all required Stage 1 checks:
-1. **Unauthenticated rejection:** Rejects requests without Bearer tokens with **HTTP 401 Unauthorized**.
-2. **Protocol Negotiation:** Handshakes and negotiates protocol version **`2025-11-25`**.
-3. **Master Tool Registry:** Exposes all 8 domain tools (`resume_analyzer`, `internship_search`, `tracker_add`, `tracker_list`, `study_plan`, `dsa_next`, `dsa_evaluate`, `progress_summary`).
-4. **Tool Execution:** Executes tool calls and returns structured JSON cards alongside human-readable text.
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Chat Route
+    participant L as Groq LLM
+    participant T as Tool Registry
+    participant S as Services
+    participant D as Neon DB
+
+    U->>C: POST /api/assistant/chat
+    C->>C: Authenticate (NextAuth)
+    C->>C: Load cross-session memory
+    C->>L: System prompt + conversation + user message
+
+    loop Up to 5 tool iterations
+        L-->>C: tool_calls (e.g. resume_analyzer)
+        C->>T: Execute tool handler
+        T->>S: Delegate to domain service
+        S->>D: Query / Mutate
+        D-->>S: Result
+        S-->>T: Structured response
+        T-->>C: text + card payload
+        C-->>U: SSE: tool_call + tool_result events
+        C->>L: Append assistant + tool messages
+    end
+
+    L-->>C: Final text response
+    C-->>U: SSE: delta + done events
+    C->>D: Persist assistant message
+```
+
+---
+
+## Data Flow: 4-Step Demo
+
+The core demo follows a student through four steps — from resume upload to adaptive DSA practice.
+
+```mermaid
+flowchart LR
+    subgraph Step1["Step 1: Resume Analysis"]
+        R["Upload Resume"] --> EX["Extract Skills<br/>via taxonomy.json"]
+        EX --> SC["Scorecard<br/>Score + Grade + Gaps"]
+    end
+
+    subgraph Step2["Step 2: Internship Search"]
+        SC --> RANK["Multi-Factor Ranking"]
+        RANK --> TOP["Top 5 Listings<br/>Match + Urgency + Fit"]
+    end
+
+    subgraph Step3["Step 3: Track & Plan"]
+        TOP --> ADD["Add to Tracker<br/>BOOKMARKED"]
+        ADD --> PLAN["14-Day Study Plan<br/>DSA + Application Tasks"]
+    end
+
+    subgraph Step4["Step 4: DSA Practice"]
+        PLAN --> NEXT["Next Question<br/>Weakness-First Selection"]
+        NEXT --> EVAL["Evaluate Answer<br/>LLM Grading + Fallback"]
+        EVAL --> ADAPT["Adapt Plan<br/>Leitner + EMA Mastery"]
+        ADAPT -.->|"Loop"| NEXT
+    end
+
+    style Step1 fill:#1a1a2e,stroke:#e94560,color:#eee
+    style Step2 fill:#16213e,stroke:#0f3460,color:#eee
+    style Step3 fill:#0f3460,stroke:#533483,color:#eee
+    style Step4 fill:#533483,stroke:#e94560,color:#eee
+```
+
+---
+
+## Amazon Hackathon (20-23 Oct 2026)
+
+This repository is being extended during the Amazon Hackathon (Alexa+ simulated track, AWS Builder, Open Source). The pre-hackathon state is tagged as [`v1-baseline`](../../tree/v1-baseline). Every change made during the hackathon is logged with commit references in [`HACKATHON_CHANGELOG.md`](HACKATHON_CHANGELOG.md).
+
+---
+
+## MCP Server — Stage 1 Evidence
+
+Campus Career Copilot exposes an official Model Context Protocol (MCP) server over **Streamable HTTP** at `/api/mcp`, implementing protocol specification **`2025-11-25`** via `@modelcontextprotocol/sdk`.
+
+```mermaid
+flowchart LR
+    IDE["IDE / MCP Client"] -->|"Bearer Token"| MCP["/api/mcp<br/>Streamable HTTP"]
+    MCP -->|"tools/list"| REG["Tool Registry<br/>8 Tools"]
+    MCP -->|"tools/call"| EXEC["Tool Execution"]
+    EXEC --> SVC["Domain Services"]
+    SVC --> DB[("Neon PostgreSQL")]
+    EXEC -->|"text + card"| MCP
+    MCP -->|"JSON-RPC Response"| IDE
+
+    style IDE fill:#1a1a2e,stroke:#e94560,color:#eee
+    style MCP fill:#0f3460,stroke:#533483,color:#eee
+```
+
+<details>
+<summary>Smoke Test Output</summary>
 
 ```text
 ================================================================================
@@ -46,167 +192,265 @@ SDK Supported Protocol Versions: ["2025-11-25","2025-06-18","2025-03-26","2024-1
 
 [1/4] Verifying 401 Unauthorized for unauthenticated requests...
     Status received: 401 Unauthorized
-    Error payload: {"code":-32002,"message":"Unauthorized: Missing or invalid Bearer token. Obtain a token via scripts/mint-demo-token.ts"}
-    [✓] PASS: Unauthenticated request rejected with HTTP 401
+    [PASS] Unauthenticated request rejected with HTTP 401
 
 [2/4] Provisioning judge token and establishing Streamable HTTP transport...
-    Minted token for judge: demo-judge@careerpilot.internal
-    [✓] Connected! Negotiated Protocol Version: 2025-11-25
-    [✓] PASS: MCP Protocol version 2025-11-25 successfully negotiated
+    [PASS] MCP Protocol version 2025-11-25 successfully negotiated
 
 [3/4] Calling tools/list...
-    Tools found (8): resume_analyzer, internship_search, tracker_add, tracker_list, study_plan, dsa_next, dsa_evaluate, progress_summary
-    [✓] PASS: All 8 tools registered and exposed over MCP
+    Tools found (8): resume_analyzer, internship_search, tracker_add,
+    tracker_list, study_plan, dsa_next, dsa_evaluate, progress_summary
+    [PASS] All 8 tools registered and exposed over MCP
 
 [4/4] Executing tool call: dsa_next...
-    Tool call completed!
-    Result content items: 1
-    Human-readable text summary: "Next practice question: \"Best day to buy and sell once\" [EASY] on topic \"arrays\" (Priority: 1). Prompt: prices[i] is a stock's price on day i. You may buy once and sell once on a later day. Return the maximum profit, or 0 if no profit is possible."
     Card type: "quiz_card"
-    [✓] PASS: Tool execution succeeded with structured output
+    [PASS] Tool execution succeeded with structured output
 
 ================================================================================
- [✓] ALL MCP SMOKE TESTS PASSED SUCCESSFULLY
+ ALL MCP SMOKE TESTS PASSED SUCCESSFULLY
 ================================================================================
 ```
 
-### Judge Evaluation & Tool Inspection
-- **Mint Demo Token:** `npx tsx scripts/mint-demo-token.ts` (mints a 60-day token for `demo-judge@careerpilot.internal`).
-- **Reset Demo User State:** `npx tsx scripts/reset-demo-user.ts` (cleans test data before judging).
-- **Run Smoke Test:** `npx tsx scripts/mcp-smoke.ts` (supports `MCP_URL=https://<your-vercel-domain>/api/mcp`).
+</details>
+
+**Judge Evaluation Commands:**
+
+```bash
+npx tsx scripts/mint-demo-token.ts      # Mint a 60-day Bearer token
+npx tsx scripts/reset-demo-user.ts      # Clean demo data before judging
+npx tsx scripts/mcp-smoke.ts            # Run smoke tests (supports MCP_URL=...)
+```
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [✨ Features](#-features)
-- [📸 Screenshots](#-screenshots)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [🧠 How the AI Features Work](#-how-the-ai-features-work)
-- [⚡ Quick Start](#-quick-start)
-- [📁 Project Structure](#-project-structure)
-- [🗄️ Database Schema](#️-database-schema)
-- [🔌 API Routes](#-api-routes)
-- [🔐 Environment Variables](#-environment-variables)
-- [🚀 Deployment to Vercel](#-deployment-to-vercel)
-- [📱 Mobile App (Android APK)](#-mobile-app-android-apk)
-- [🔧 Troubleshooting](#-troubleshooting)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Tool Registry](#tool-registry)
+- [Ranking Algorithm](#ranking-algorithm)
+- [Quick Start](#quick-start)
+- [Database Schema](#database-schema)
+- [API Routes](#api-routes)
+- [Environment Variables](#environment-variables)
+- [Deployment](#deployment-to-vercel)
+- [Mobile App (Android)](#mobile-app-android-apk)
+- [Tests](#tests)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🔑 **Google OAuth Login** | One-click Google sign-in powered by NextAuth.js — no passwords needed |
-| 📋 **Interactive Kanban Board** | Drag-and-drop pipeline with 6 stages: *Bookmarked → Applied → Screening → Interview → Offer → Rejected* (built with `@dnd-kit`) |
-| 🤖 **AI Job Description Parser** | Paste a URL or raw JD text — GPT-4o-mini extracts 12+ structured fields (role, company, salary, skills, responsibilities, and more) |
-| 📄 **Resume Upload & Parsing** | Upload PDF or TXT resumes; extracts text and auto-detects skills via keyword matching using `pdf-parse` |
-| 🎯 **AI Resume Match Scorer** | Compares your resume against a JD and returns: overall score (0–100%), letter grade (A–F), matched/missing/bonus skills, strengths, gaps, improvement suggestions, ATS keywords, and interview likelihood |
-| 📊 **Insights Dashboard** | Stats cards with total applications, response rates, average match scores, and per-status breakdowns |
-| 🗂️ **Application Detail Modal** | Full slide-over panel with tabs for core details, notes, JD parsing results, and ATS match analysis |
-| 🔄 **List + Kanban Views** | Toggle between a glassmorphic table view and the Kanban board |
-| ⚙️ **Settings Page** | Profile display, OpenAI API key configuration (bring your own key), billing/tier info |
-| 🎨 **Premium Dark UI** | 1,100+ line custom CSS design system with glassmorphism, animations, and gradient accents |
-| 🌊 **Interactive Moiré Hero** | Mathematical grating wave background (`MoireField`) with pointer aim tracking, drift physics, and dual-theme radial vignette |
-| 📱 **Mobile Responsive** | Fully responsive design that works beautifully on all screen sizes |
-| 🤖 **Android Mobile App** | Native Android APK via Capacitor that wraps the deployed web app |
+| **Google OAuth Login** | One-click Google sign-in via NextAuth.js |
+| **Interactive Kanban Board** | Drag-and-drop pipeline: *Bookmarked, Applied, Screening, Interview, Offer, Rejected* (`@dnd-kit`) |
+| **AI Assistant Chat** | Streaming chat panel with 8 domain tools, cross-session memory, and structured card outputs |
+| **MCP Server** | Model Context Protocol endpoint at `/api/mcp` for IDE and agent integrations |
+| **Resume Skill Extraction** | Upload PDF/TXT resumes; auto-detects skills against a 50+ skill taxonomy |
+| **Multi-Factor Internship Ranking** | Ranks 30+ seeded listings by skill match, role fit, work-mode preference, and deadline urgency |
+| **Adaptive Study Planner** | Generates daily plans with DSA, revision, resume, and application deadline tasks |
+| **Leitner Spaced Repetition** | DSA mastery tracking with 5-box system, exponential moving average, and automatic replanning |
+| **LLM-Graded Code Evaluation** | Groq-powered grading with Zod validation, keyword fallback on failure, and clamped 0-1 scores |
+| **Insights Dashboard** | Stats cards with application counts, response rates, match scores, and per-status breakdowns |
+| **Premium Dark UI** | 1,100+ line CSS design system with glassmorphism, gradient accents, and micro-animations |
+| **Interactive Moire Hero** | Mathematical grating wave background with pointer tracking and drift physics |
+| **Mobile Responsive** | Fully responsive design across all screen sizes |
+| **Android APK** | Native wrapper via Capacitor |
 
 ---
 
-## 📸 Screenshots
+## Tech Stack
 
-> Screenshots and a demo video will be added here before the hackathon submission.
+<table>
+  <tr>
+    <td align="center" width="96">
+      <a href="https://nextjs.org/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg" width="48" height="48" alt="Next.js" />
+      </a>
+      <br><sub><b>Next.js 16</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://www.typescriptlang.org/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="48" height="48" alt="TypeScript" />
+      </a>
+      <br><sub><b>TypeScript</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://react.dev/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="48" height="48" alt="React" />
+      </a>
+      <br><sub><b>React 19</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://tailwindcss.com/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" width="48" height="48" alt="Tailwind CSS" />
+      </a>
+      <br><sub><b>Tailwind v4</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://www.prisma.io/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prisma/prisma-original.svg" width="48" height="48" alt="Prisma" />
+      </a>
+      <br><sub><b>Prisma v7</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://www.postgresql.org/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="48" height="48" alt="PostgreSQL" />
+      </a>
+      <br><sub><b>PostgreSQL</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="96">
+      <a href="https://console.groq.com/">
+        <img src="https://img.shields.io/badge/G-F55036?style=flat-square" width="48" height="48" alt="Groq" />
+      </a>
+      <br><sub><b>Groq LLM</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://neon.tech/">
+        <img src="https://img.shields.io/badge/N-4169E1?style=flat-square" width="48" height="48" alt="Neon" />
+      </a>
+      <br><sub><b>Neon DB</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://vercel.com/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vercel/vercel-original.svg" width="48" height="48" alt="Vercel" />
+      </a>
+      <br><sub><b>Vercel</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://next-auth.js.org/">
+        <img src="https://img.shields.io/badge/NA-000?style=flat-square" width="48" height="48" alt="NextAuth" />
+      </a>
+      <br><sub><b>NextAuth.js</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://vitest.dev/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitest/vitest-original.svg" width="48" height="48" alt="Vitest" />
+      </a>
+      <br><sub><b>Vitest</b></sub>
+    </td>
+    <td align="center" width="96">
+      <a href="https://capacitorjs.com/">
+        <img src="https://img.shields.io/badge/C-119EFF?style=flat-square" width="48" height="48" alt="Capacitor" />
+      </a>
+      <br><sub><b>Capacitor</b></sub>
+    </td>
+  </tr>
+</table>
+
+| Layer | Technology | Purpose |
+|:------|:-----------|:--------|
+| **Runtime** | Next.js 16 (App Router, Turbopack) | SSR, API routes, SSE streaming |
+| **Language** | TypeScript 5 | End-to-end type safety |
+| **Styling** | Tailwind CSS v4 + custom design system | Glassmorphism, animations, dark mode |
+| **Database** | PostgreSQL on Neon | Serverless, auto-scaling |
+| **ORM** | Prisma v7 with `pg` driver adapter | Type-safe queries, migrations |
+| **Auth** | NextAuth.js v4 (Google OAuth) | Session-based authentication |
+| **LLM** | Groq (OpenAI-compatible API) | Chat completions, DSA grading |
+| **State** | Zustand + React Query | Client-side state + server cache |
+| **DnD** | `@dnd-kit/core` + `@dnd-kit/sortable` | Kanban drag-and-drop |
+| **Charts** | Recharts | Dashboard visualizations |
+| **PDF** | `pdf-parse` | Resume text extraction |
+| **Mobile** | Capacitor | Android native wrapper |
+| **Testing** | Vitest | Unit + integration tests (302 unit, 17 integration) |
 
 ---
 
-## 🛠️ Tech Stack
+## Tool Registry
 
-| Layer | Technology |
-|:------|:-----------|
-| **Framework** | Next.js 16 (App Router, Turbopack) |
-| **Language** | TypeScript |
-| **Styling** | Tailwind CSS v4 + `tailwind-merge` + Custom CSS Design System (glassmorphism, animations) |
-| **Database** | PostgreSQL (hosted on [Neon](https://neon.tech)) |
-| **ORM** | Prisma v7 with `pg` driver adapter |
-| **Auth** | NextAuth.js v4 (Google OAuth) |
-| **AI** | OpenAI GPT-4o-mini (structured JSON outputs) |
-| **State Management** | Zustand + React Query (`@tanstack/react-query`) |
-| **Drag & Drop** | `@dnd-kit/core` + `@dnd-kit/sortable` |
-| **Charts** | Recharts |
-| **Icons** | Lucide React |
-| **PDF Parsing** | `pdf-parse` |
-| **Deployment** | Vercel (web) + Neon (database) |
-| **Mobile** | Capacitor (Android native wrapper) |
-
----
-
-## 🧠 How the AI Features Work
-
-JobTracker AI uses **OpenAI's GPT-4o-mini** model with structured JSON output mode to power two core features:
-
-### 1. Job Description Parser (`/api/ai/parse-jd`)
+All 8 tools are shared between the Assistant Chat route and the MCP server. Each tool returns a human-readable `text` field (fed back to the LLM) and a `structured.card` payload (rendered on the frontend).
 
 ```mermaid
-flowchart LR
-    A["📋 Raw JD Text\nor URL"] --> B["API Route\n/api/ai/parse-jd"]
-    B --> C["GPT-4o-mini\n(Structured Output)"]
-    C --> D["Parsed JSON\n12+ Fields"]
-    D --> E["💾 Stored on\nApplication Record"]
+graph LR
+    subgraph Tools["8 Domain Tools"]
+        T1["resume_analyzer"]
+        T2["internship_search"]
+        T3["tracker_add"]
+        T4["tracker_list"]
+        T5["study_plan"]
+        T6["dsa_next"]
+        T7["dsa_evaluate"]
+        T8["progress_summary"]
+    end
+
+    subgraph Cards["Frontend Cards"]
+        C1["resume_scorecard"]
+        C2["internship_list"]
+        C3["tracker_card"]
+        C4["tracker_board"]
+        C5["plan_card"]
+        C6["quiz_card"]
+        C7["eval_card"]
+        C8["progress_card"]
+    end
+
+    T1 --> C1
+    T2 --> C2
+    T3 --> C3
+    T4 --> C4
+    T5 --> C5
+    T6 --> C6
+    T7 --> C7
+    T8 --> C8
+
+    style Tools fill:#0f3460,stroke:#533483,color:#eee
+    style Cards fill:#533483,stroke:#e94560,color:#eee
 ```
 
-**How it works:**
-
-1. The user pastes a **job description URL** or **raw text** into the parser.
-2. The API route sends the text to GPT-4o-mini with a carefully crafted **system prompt** that instructs the model to extract structured fields.
-3. The model returns a **JSON object** with 12+ fields, including:
-   - Job title, company name, location, job type (remote/hybrid/onsite)
-   - Salary range, experience level, department
-   - Required skills, preferred skills, responsibilities
-   - Benefits, application deadline
-4. The parsed data is stored as a JSON blob on the `Application` record in PostgreSQL and displayed in the detail modal.
-
-### 2. Resume Match Scorer (`/api/ai/match-score`)
-
-```mermaid
-flowchart LR
-    A["📄 Resume Text"] --> C["GPT-4o-mini\n(Structured Output)"]
-    B["📋 Parsed JD"] --> C
-    C --> D["Match Analysis JSON"]
-    D --> E["🎯 Score: 78%\nGrade: B+"]
-```
-
-**How it works:**
-
-1. The user's **active resume text** (extracted from the uploaded PDF/TXT) and the **job description** are sent together to the API.
-2. GPT-4o-mini receives both documents with a system prompt that instructs it to perform a **detailed comparison**.
-3. The model returns a comprehensive JSON analysis:
-
-   | Field | Example |
-   |-------|---------|
-   | **Overall Score** | `78` (0–100) |
-   | **Grade** | `B+` (A–F scale) |
-   | **Matched Skills** | `["React", "TypeScript", "Node.js"]` |
-   | **Missing Skills** | `["Kubernetes", "AWS"]` |
-   | **Bonus Skills** | `["GraphQL", "Docker"]` |
-   | **Strengths** | Key areas where the resume excels |
-   | **Gaps** | Critical areas needing improvement |
-   | **Suggestions** | Actionable tips to boost the score |
-   | **ATS Keywords** | Keywords to add for ATS optimization |
-   | **Interview Likelihood** | `"High"`, `"Medium"`, or `"Low"` |
-
-4. Results are stored on the `Application` record and displayed in the match analysis tab of the detail modal.
-
-> [!NOTE]
-> Both AI endpoints use **structured JSON output mode** (`response_format: { type: "json_object" }`), ensuring reliable, parseable responses every time. Users can configure their own OpenAI API key in Settings.
+| Tool | Input | Output |
+|:-----|:------|:-------|
+| `resume_analyzer` | — | Scorecard: score/100, grade, matched skills, priority gaps |
+| `internship_search` | optional filters | Top 5 ranked listings with 4 sub-scores |
+| `tracker_add` | listing ID or slug | Add listing to BOOKMARKED pipeline |
+| `tracker_list` | — | Current tracked applications |
+| `study_plan` | days, hours/day | Adaptive daily plan with DSA + application tasks |
+| `dsa_next` | — | Next practice question (weakness-first selection) |
+| `dsa_evaluate` | question ID, answer (max 4000 chars) | Graded scores + mastery update + plan adaptation |
+| `progress_summary` | — | Overall readiness: resume, applications, DSA mastery |
 
 ---
 
-## ⚡ Quick Start
+## Ranking Algorithm
 
-Get up and running in under 5 minutes:
+Internship ranking uses a weighted composite of four normalized sub-scores:
+
+```mermaid
+flowchart TB
+    subgraph Inputs["Scoring Inputs"]
+        SKILLS["Skill Match<br/>Jaccard Similarity<br/>resume vs listing"]
+        ROLE["Role Fit<br/>Tag overlap with<br/>user preferences"]
+        MODE["Mode Fit<br/>Remote / Hybrid / Onsite<br/>preference match"]
+        URGENCY["Deadline Urgency<br/>Inverse time decay<br/>sqrt normalization"]
+    end
+
+    subgraph Weights["Composite Formula"]
+        W["totalRank =<br/>0.40 * match +<br/>0.15 * roleFit +<br/>0.15 * modeFit +<br/>0.30 * urgency"]
+    end
+
+    subgraph Output["Result"]
+        SORTED["Sorted Listings<br/>Top 5 returned"]
+    end
+
+    SKILLS --> W
+    ROLE --> W
+    MODE --> W
+    URGENCY --> W
+    W --> SORTED
+
+    style Inputs fill:#1a1a2e,stroke:#e94560,color:#eee
+    style Weights fill:#0f3460,stroke:#533483,color:#eee
+    style Output fill:#533483,stroke:#e94560,color:#eee
+```
+
+---
+
+## Quick Start
 
 ```bash
 # 1. Clone the repository
@@ -218,94 +462,27 @@ npm install
 
 # 3. Set up environment variables
 cp .env.example .env.local
-# Edit .env.local and fill in your values (see Environment Variables section below)
+# Edit .env.local with your values (see Environment Variables section)
 
 # 4. Set up the database
 npx prisma migrate dev
 npx prisma generate
 
-# 5. Start the development server
+# 5. Seed internship listings and DSA questions
+npx tsx prisma/seed.ts
+
+# 6. Start the development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and sign in with Google. 🎉
+Open [http://localhost:3000](http://localhost:3000) and sign in with Google.
 
 > [!TIP]
-> Don't have a PostgreSQL database yet? Create a free serverless database in seconds at [neon.tech](https://neon.tech). Copy the connection string into your `DATABASE_URL`.
+> Create a free serverless PostgreSQL database at [neon.tech](https://neon.tech) and copy the connection string into `DATABASE_URL`.
 
 ---
 
-## 📁 Project Structure
-
-```
-ai-job-tracker/
-├── 📂 src/
-│   ├── 📂 app/
-│   │   ├── 📂 (app)/                   # Authenticated app routes
-│   │   │   ├── 📂 applications/        # Kanban board + list view page
-│   │   │   ├── 📂 dashboard/           # Insights dashboard
-│   │   │   ├── 📂 resume/              # Resume management page
-│   │   │   ├── 📂 settings/            # Settings page
-│   │   │   └── 📄 layout.tsx           # App layout wrapper
-│   │   ├── 📂 api/
-│   │   │   ├── 📂 ai/
-│   │   │   │   ├── 📂 parse-jd/        # AI JD parser endpoint
-│   │   │   │   └── 📂 match-score/     # AI resume scorer endpoint
-│   │   │   ├── 📂 applications/        # CRUD for job applications
-│   │   │   ├── 📂 auth/                # NextAuth handler
-│   │   │   └── 📂 resume/              # Resume upload endpoint
-│   │   ├── 📂 login/                   # Login page
-│   │   ├── 📄 page.tsx                 # Landing page
-│   │   ├── 🎨 globals.css             # Design system (1,100+ lines)
-│   │   ├── 📄 layout.tsx              # Root layout
-│   │   └── 📄 providers.tsx           # Session provider
-│   ├── 📂 components/
-│   │   ├── 📂 kanban/
-│   │   │   ├── AddApplicationModal.tsx
-│   │   │   ├── ApplicationCard.tsx
-│   │   │   ├── ApplicationDetailModal.tsx
-│   │   │   ├── KanbanBoard.tsx
-│   │   │   └── KanbanColumn.tsx
-│   │   ├── 📂 layout/
-│   │   │   ├── AppLayout.tsx
-│   │   │   ├── JTLogo.tsx
-│   │   │   ├── ThemeProvider.tsx
-│   │   │   └── ThemeToggle.tsx
-│   │   └── 📂 ui/
-│   │       ├── demo.tsx               # MoireField showcase demo
-│   │       └── moire-field.tsx        # Interactive Moiré background component
-│   ├── 📂 lib/
-│   │   ├── 📄 auth.ts                 # NextAuth config
-│   │   ├── 📄 auth-helpers.ts         # Session helpers
-│   │   ├── 📄 prisma.ts              # Prisma client with pg adapter
-│   │   └── 📄 utils.ts               # Class name combiner (clsx + tailwind-merge)
-│   └── 📂 types/
-│       ├── 📄 application.ts          # App type definitions
-│       └── 📄 next-auth.d.ts          # NextAuth type augmentation
-├── 📂 prisma/
-│   └── 📄 schema.prisma              # Database schema
-├── 📂 android/                        # Capacitor Android native project
-├── 📄 capacitor.config.json           # Capacitor configuration
-├── 📄 package.json
-├── 📄 next.config.ts
-├── 📄 tsconfig.json
-└── 🔒 .env.local                     # Environment variables (not committed)
-```
-
----
-
-## 🗄️ Database Schema
-
-The app uses **Prisma v7** with a **PostgreSQL** database. Below are the core models:
-
-| Model | Purpose |
-|-------|---------|
-| **User** | User profile, linked to Google OAuth via NextAuth |
-| **Account** | OAuth provider accounts (Google) |
-| **Session** | Active user sessions |
-| **Application** | Job applications with status enum (`BOOKMARKED`, `APPLIED`, `SCREENING`, `INTERVIEW`, `OFFER`, `REJECTED`), parsed JD data (JSON), match score, match analysis (JSON), notes, salary, location, job type |
-| **Resume** | User resumes with raw text, parsed skills array, active flag |
-| **VerificationToken** | Email verification tokens |
+## Database Schema
 
 ```mermaid
 erDiagram
@@ -313,68 +490,104 @@ erDiagram
     User ||--o{ Session : has
     User ||--o{ Application : creates
     User ||--o{ Resume : uploads
+    User ||--o| UserProfile : has
+    User ||--o{ ChatSession : starts
+    User ||--o{ TopicMastery : tracks
+    User ||--o{ PracticeAttempt : submits
+    User ||--o{ StudyPlan : owns
+    ChatSession ||--o{ ChatMessage : contains
+    StudyPlan ||--o{ StudyTask : schedules
+    Question ||--o{ PracticeAttempt : tested_in
+    Listing ||--o{ Application : tracked_via
+
     Application {
         string id PK
         string status
         json parsedJD
         float matchScore
         json matchAnalysis
-        string notes
     }
     Resume {
         string id PK
         text rawText
-        json skills
+        string[] parsedSkills
+        boolean isActive
+    }
+    Listing {
+        string id PK
+        string slug UK
+        string[] skills
+        datetime deadline
+    }
+    Question {
+        string id PK
+        string slug UK
+        string topic
+        enum difficulty
+        json rubric
+    }
+    TopicMastery {
+        string topic
+        float mastery
+        int box
+        datetime nextReviewAt
+    }
+    StudyPlan {
+        float hoursPerDay
         boolean active
+    }
+    StudyTask {
+        date date
+        enum kind
+        int minutes
+        boolean done
     }
 ```
 
 ---
 
-## 🔌 API Routes
+## API Routes
 
 | Method | Endpoint | Description |
 |:------:|----------|-------------|
 | `POST` | `/api/applications` | Create a new job application |
-| `GET` | `/api/applications` | List user's applications (supports search, status filter, pagination) |
-| `PATCH` | `/api/applications` | Update application fields (status, notes, etc.) |
+| `GET` | `/api/applications` | List user applications (search, filter, pagination) |
+| `PATCH` | `/api/applications` | Update application fields |
 | `DELETE` | `/api/applications` | Delete an application |
-| `POST` | `/api/ai/parse-jd` | AI-powered job description parser |
+| `POST` | `/api/ai/parse-jd` | AI job description parser |
 | `POST` | `/api/ai/match-score` | AI resume-to-JD match scorer |
 | `POST` | `/api/resume` | Upload a resume (PDF or TXT) |
-| `GET` | `/api/resume` | List user's uploaded resumes |
-| `GET/POST` | `/api/auth/[...nextauth]` | NextAuth.js authentication handler |
+| `GET` | `/api/resume` | List user resumes |
+| `POST` | `/api/assistant/chat` | Streaming assistant chat (SSE) |
+| `POST` | `/api/mcp` | MCP server endpoint (Streamable HTTP) |
+| `GET/POST` | `/api/auth/[...nextauth]` | NextAuth.js handler |
 
 > [!IMPORTANT]
-> All API routes (except auth) require an authenticated session. Unauthenticated requests receive a `401 Unauthorized` response.
+> All API routes (except auth) require an authenticated session. Unauthenticated requests receive `401 Unauthorized`.
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
-Create a `.env.local` file in the project root with the following variables:
-
-| Variable | Description | How to Get |
-|----------|-------------|:----------:|
-| `DATABASE_URL` | PostgreSQL connection string | Create a free database on [neon.tech](https://neon.tech) |
-| `NEXTAUTH_SECRET` | Random secret for session encryption | Run: `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | App URL (`http://localhost:3000` for dev) | Your deployment URL |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials |
+| Variable | Description | Source |
+|----------|-------------|--------|
+| `DATABASE_URL` | PostgreSQL connection string | [neon.tech](https://neon.tech) |
+| `NEXTAUTH_SECRET` | Session encryption key | `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | App URL (e.g. `http://localhost:3000`) | Your deployment URL |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | [Google Cloud Console](https://console.cloud.google.com/) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | Same as above |
-| `OPENAI_API_KEY` | OpenAI API key (fallback LLM) | [platform.openai.com](https://platform.openai.com/) → API Keys |
-| `AWS_REGION` | AWS region for Bedrock (e.g. `ap-south-1`) | [AWS Console](https://console.aws.amazon.com/) |
-| `AWS_ACCESS_KEY_ID` | IAM access key with Bedrock permissions | AWS Console → IAM → Users → Security credentials |
-| `AWS_SECRET_ACCESS_KEY` | IAM secret key | Same as above |
-| `BEDROCK_MODEL_ID` | Bedrock model (primary LLM) | e.g. `anthropic.claude-3-haiku-20240307-v1:0` |
+| `OPENAI_API_KEY` | Groq API key (OpenAI-compatible) | [console.groq.com](https://console.groq.com/) |
+| `OPENAI_BASE_URL` | Groq endpoint URL | `https://api.groq.com/openai/v1` |
+| `OPENAI_MODEL` | Model identifier | `openai/gpt-oss-120b` |
 
 A ready-to-copy template lives in [`.env.example`](.env.example).
 
 <details>
-<summary>📋 Example <code>.env.local</code> file</summary>
+<summary>Example .env.local</summary>
 
 ```env
 # Database
-DATABASE_URL="postgresql://user:password@ep-example-123.us-east-2.aws.neon.tech/dbname?sslmode=require"
+DATABASE_URL="postgresql://user:password@ep-example.us-east-2.aws.neon.tech/dbname?sslmode=require"
 
 # NextAuth
 NEXTAUTH_SECRET="your-random-secret-here"
@@ -384,64 +597,73 @@ NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="123456789-abcdefg.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="GOCSPX-your-secret-here"
 
-# OpenAI
-OPENAI_API_KEY="sk-proj-your-api-key-here"
+# Groq LLM (OpenAI-compatible)
+OPENAI_API_KEY="gsk_your-groq-api-key-here"
+OPENAI_BASE_URL="https://api.groq.com/openai/v1"
+OPENAI_MODEL="openai/gpt-oss-120b"
 ```
 
 </details>
 
 ---
 
-## 🚀 Deployment to Vercel
+## Deployment to Vercel
+
+```mermaid
+flowchart LR
+    GH["GitHub Repo"] -->|"git push"| V["Vercel"]
+    V -->|"Build"| NX["Next.js Build"]
+    NX -->|"Deploy"| PROD["Production"]
+    PROD --> NEON[("Neon PostgreSQL")]
+    PROD --> GROQ["Groq API"]
+
+    style GH fill:#1a1a2e,stroke:#e94560,color:#eee
+    style V fill:#000,stroke:#fff,color:#fff
+    style PROD fill:#0f3460,stroke:#533483,color:#eee
+```
 
 1. **Push** your code to GitHub.
 2. **Import** the repository on [vercel.com](https://vercel.com).
-3. **Add environment variables** in the Vercel Dashboard:
-   - Go to **Settings → Environment Variables**
-   - Add all variables from the table above
-4. **Set `NEXTAUTH_URL`** to your Vercel production URL (e.g., `https://your-app.vercel.app`).
-5. **Deploy** — Vercel will build and deploy automatically on every push.
+3. **Add environment variables** in the Vercel Dashboard (Settings > Environment Variables).
+4. **Set `NEXTAUTH_URL`** to your Vercel production URL.
+5. **Deploy** — Vercel builds and deploys automatically on every push.
 
 > [!TIP]
-> Make sure your Google OAuth Authorized Redirect URIs include `https://your-app.vercel.app/api/auth/callback/google` in the Google Cloud Console.
+> Add `https://your-app.vercel.app/api/auth/callback/google` to your Google OAuth Authorized Redirect URIs.
 
 ---
 
-## 📱 Mobile App (Android APK)
+## Mobile App (Android APK)
 
-The mobile app is a **native Android wrapper** built with [Capacitor](https://capacitorjs.com/) that loads the deployed web app inside a WebView. This gives you a real Android app (`.apk`) that users can install on their phones.
+The mobile app is a native Android wrapper built with [Capacitor](https://capacitorjs.com/) that loads the deployed web app.
 
 ### Prerequisites
 
-Before you begin, make sure you have:
+- Node.js 18+
+- Android Studio with Android SDK (API Level 36)
+- A physical Android device or emulator
 
-- ✅ **Node.js 18+** installed ([download](https://nodejs.org/))
-- ✅ **Android Studio** installed ([download](https://developer.android.com/studio))
-- ✅ **Android SDK** installed (API Level 36 recommended)
-- ✅ A **physical Android device** or an **Android emulator** set up
+### Build Steps
 
-> [!NOTE]
-> If you've never done Android development before, don't worry! Follow the step-by-step guide below. The entire process takes about 20–30 minutes, most of which is download/install time.
+```bash
+# 1. Update capacitor.config.json with your Vercel URL
+# 2. Sync web assets
+npx cap sync
 
----
+# 3. Open in Android Studio
+npx cap open android
 
-### Step 1: Install Android Studio
+# 4. Build > Build APK(s) > app-debug.apk
+```
 
-1. Download Android Studio from [developer.android.com/studio](https://developer.android.com/studio).
-2. Run the installer and follow the setup wizard.
-3. When prompted, make sure the following components are checked:
-   - ☑️ Android SDK
-   - ☑️ Android SDK Platform-Tools
-   - ☑️ Android SDK Build-Tools
-4. Complete the installation and launch Android Studio at least once (it will download additional components).
+The APK is generated at `android/app/build/outputs/apk/debug/app-debug.apk`.
 
----
+<details>
+<summary>Detailed Android Setup Guide</summary>
 
-### Step 2: Configure the Android SDK Path
+**Step 1:** Download and install [Android Studio](https://developer.android.com/studio).
 
-After installing Android Studio, you need to tell the project where your Android SDK is located.
-
-**Find your SDK path:**
+**Step 2:** Set the SDK path in `android/local.properties`:
 
 | OS | Default SDK Path |
 |----|-----------------|
@@ -449,287 +671,123 @@ After installing Android Studio, you need to tell the project where your Android
 | **macOS** | `~/Library/Android/sdk` |
 | **Linux** | `~/Android/Sdk` |
 
-> [!TIP]
-> Not sure where your SDK is? Open Android Studio → **Settings** (or **Preferences** on Mac) → **Languages & Frameworks** → **Android SDK** → copy the **Android SDK Location** path.
-
-**Update `android/local.properties`:**
-
-Open (or create) the file `android/local.properties` and set the SDK path:
-
-```properties
-# Windows (use double backslashes)
-sdk.dir=C\\:\\\\Users\\\\YourUsername\\\\AppData\\\\Local\\\\Android\\\\Sdk
-
-# macOS / Linux
-sdk.dir=/Users/YourUsername/Library/Android/sdk
-```
-
----
-
-### Step 3: Update the Vercel URL
-
-Open `capacitor.config.json` in the project root and update `server.url` to point to your **deployed Vercel URL**:
+**Step 3:** Update `capacitor.config.json`:
 
 ```json
 {
-  "appId": "com.aijobtracker.app",
-  "appName": "JobTracker AI",
-  "webDir": "out",
   "server": {
-    "url": "https://your-actual-vercel-url.vercel.app",
-    "cleartext": true
+    "url": "https://your-actual-vercel-url.vercel.app"
   }
 }
 ```
 
-> [!WARNING]
-> Replace `https://your-actual-vercel-url.vercel.app` with your real Vercel deployment URL. If this is wrong, the app will show a blank screen or an error.
-
----
-
-### Step 4: Sync Capacitor
-
-Run the following command from the project root to sync web assets with the native Android project:
+**Step 4:** Build from command line (alternative):
 
 ```bash
-npx cap sync
-```
-
----
-
-### Step 5: Build the APK
-
-You have two options — use **Android Studio** (recommended for beginners) or the **command line**.
-
-<details>
-<summary>🅰️ <strong>Option A: Build with Android Studio</strong> (Recommended)</summary>
-
-1. Open the Android project in Android Studio:
-   ```bash
-   npx cap open android
-   ```
-2. **Wait for Gradle sync** to complete (you'll see a progress bar at the bottom). This may take a few minutes on the first run.
-3. Go to **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
-4. Wait for the build to finish. A notification will appear with a link to the APK.
-5. The APK is generated at:
-   ```
-   android/app/build/outputs/apk/debug/app-debug.apk
-   ```
-
-</details>
-
-<details>
-<summary>🅱️ <strong>Option B: Build from Command Line</strong></summary>
-
-Navigate to the `android` directory and run the Gradle build:
-
-```bash
-# macOS / Linux
 cd android
-./gradlew assembleDebug
-
-# Windows
-cd android
-gradlew.bat assembleDebug
+./gradlew assembleDebug   # macOS/Linux
+gradlew.bat assembleDebug  # Windows
 ```
 
-The APK will be generated at:
-
-```
-android/app/build/outputs/apk/debug/app-debug.apk
-```
-
-</details>
-
----
-
-### Step 6: Install the APK on Your Phone
-
-Choose one of the following methods:
-
-<details>
-<summary>📲 <strong>Method 1: Manual Transfer</strong> (No developer tools needed)</summary>
-
-1. **Copy the APK** (`app-debug.apk`) to your phone via USB cable, email, Google Drive, or any file transfer method.
-2. On your phone, go to **Settings → Security** (or **Settings → Apps → Special Access**).
-3. Enable **"Install from unknown sources"** or **"Install unknown apps"** for your file manager.
-4. Open the APK file on your phone and tap **Install**.
-5. Once installed, find **"JobTracker AI"** in your app drawer and open it! 🎉
-
-</details>
-
-<details>
-<summary>⚡ <strong>Method 2: Install via ADB</strong> (Developer-friendly)</summary>
-
-If you have **USB debugging** enabled on your phone:
-
-1. Connect your phone to your computer via USB.
-2. Authorize the computer on your phone when prompted.
-3. Run:
-   ```bash
-   adb install android/app/build/outputs/apk/debug/app-debug.apk
-   ```
-4. The app will be installed and ready to open. 🎉
-
-> **Enable USB Debugging:** On your phone, go to **Settings → About Phone → tap "Build Number" 7 times** to enable Developer Options. Then go to **Settings → Developer Options → enable USB Debugging**.
-
-</details>
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-<details>
-<summary>❌ <strong>"Invalid redirect_uri" error during Google login</strong></summary>
-
-**Cause:** Your Google OAuth Authorized Redirect URIs don't match your app URL.
-
-**Fix:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials**.
-2. Click your OAuth 2.0 Client ID.
-3. Under **Authorized redirect URIs**, add:
-   - `http://localhost:3000/api/auth/callback/google` (for local dev)
-   - `https://your-app.vercel.app/api/auth/callback/google` (for production)
-4. Save and wait a few minutes for changes to propagate.
-
-</details>
-
-<details>
-<summary>❌ <strong>Prisma: "Can't reach database server"</strong></summary>
-
-**Cause:** Your `DATABASE_URL` is incorrect or the database is unreachable.
-
-**Fix:**
-1. Verify your `DATABASE_URL` in `.env.local` is correct.
-2. Make sure the connection string includes `?sslmode=require` for Neon.
-3. Check that your Neon database isn't suspended (free-tier databases auto-suspend after inactivity).
-4. Try running `npx prisma db pull` to test the connection.
-
-</details>
-
-<details>
-<summary>❌ <strong>AI features return errors or empty responses</strong></summary>
-
-**Cause:** Missing or invalid OpenAI API key, or insufficient credits.
-
-**Fix:**
-1. Verify your `OPENAI_API_KEY` is set in `.env.local` (or in Settings if using the in-app config).
-2. Make sure the API key starts with `sk-`.
-3. Check your OpenAI account has available credits at [platform.openai.com/usage](https://platform.openai.com/usage).
-4. The app uses `gpt-4o-mini` — ensure your API key has access to this model.
-
-</details>
-
-<details>
-<summary>❌ <strong>Android build fails with "SDK location not found"</strong></summary>
-
-**Cause:** The `android/local.properties` file is missing or has an incorrect SDK path.
-
-**Fix:**
-1. Open Android Studio → **Settings → Languages & Frameworks → Android SDK**.
-2. Copy the **Android SDK Location** path.
-3. Create or edit `android/local.properties` and set `sdk.dir` to that path (see [Step 2](#step-2-configure-the-android-sdk-path) above).
-
-</details>
-
-<details>
-<summary>❌ <strong>Android app shows a blank white screen</strong></summary>
-
-**Cause:** The `server.url` in `capacitor.config.json` is incorrect or the Vercel deployment is down.
-
-**Fix:**
-1. Open `capacitor.config.json` and verify the `server.url` matches your live Vercel deployment.
-2. Test the URL in a browser to make sure it loads.
-3. Run `npx cap sync` again after making changes.
-4. Rebuild the APK.
-
-</details>
-
-<details>
-<summary>❌ <strong>Drag and drop not working on the Kanban board</strong></summary>
-
-**Cause:** Browser compatibility issue or conflicting CSS.
-
-**Fix:**
-1. Make sure you're using a modern browser (Chrome, Firefox, Edge, Safari 15+).
-2. Try disabling browser extensions that might intercept drag events.
-3. On mobile, touch-based drag and drop should work out of the box via `@dnd-kit`'s touch sensor.
-
-</details>
-
-<details>
-<summary>❌ <strong>"NEXTAUTH_SECRET" error on deployment</strong></summary>
-
-**Cause:** The `NEXTAUTH_SECRET` environment variable is not set.
-
-**Fix:**
-1. Generate a secret: `openssl rand -base64 32`
-2. Add it to your Vercel environment variables (Settings → Environment Variables).
-3. Redeploy the app.
-
-</details>
-
----
-
-## 🧪 Tests
-
-Tests use [Vitest](https://vitest.dev/) and live in `tests/`. They run without a database or any LLM call.
+**Step 5:** Install via ADB:
 
 ```bash
-npm test          # run once
-npm run test:watch
+adb install android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-| Suite | What it covers |
-|-------|----------------|
-| `tests/auth/route-guard.test.ts` | Protected pages redirect to `/login`, protected APIs return `401`, public paths stay open |
-| `tests/auth/auth-config.test.ts` | Google OAuth is the only login provider (no email-only login) |
+</details>
 
+---
 
+## Tests
 
-## 🤝 Contributing
+Tests use [Vitest](https://vitest.dev/). Unit tests run without a database or LLM; integration tests use a live Neon database.
 
-Contributions are welcome! Here's how to get started:
+```bash
+npm test                # 302 unit tests
+npm run test:integration # 17 integration tests (requires DATABASE_URL)
+```
+
+| Suite | Tests | Coverage |
+|-------|:-----:|----------|
+| `algorithms/matching` | 184 | Skill extraction, ID/name mapping, scoreMatch, rankListings |
+| `algorithms/planner` | 18 | Study plan generation, application tasks, replanning |
+| `algorithms/practice` | 18 | Weakness-first selection, Leitner box advancement |
+| `algorithms/ranking` | 15 | Multi-factor ranking, sub-score normalization |
+| `algorithms/progress` | 6 | Readiness scoring |
+| `auth/route-guard` | 33 | Protected routes redirect, APIs return 401 |
+| `auth/safe-callback` | 6 | OAuth callback safety |
+| `auth/auth-config` | 2 | Google-only provider |
+| `data/seed-integrity` | 11 | Taxonomy + seed data consistency |
+| `tools/tools` | 7 | Tool registry completeness, userId isolation |
+| `lib/time` | 2 | Time utilities |
+| **services/grading** | 7 | LLM grading, Zod validation, keyword fallback |
+| **services/services** | 10 | Full demo-path integration (resume > search > track > plan > DSA) |
+
+---
+
+## Troubleshooting
+
+<details>
+<summary><strong>"Invalid redirect_uri" during Google login</strong></summary>
+
+Add these URIs to your Google Cloud Console OAuth credentials:
+- `http://localhost:3000/api/auth/callback/google` (dev)
+- `https://your-app.vercel.app/api/auth/callback/google` (production)
+
+</details>
+
+<details>
+<summary><strong>Prisma: "Can't reach database server"</strong></summary>
+
+- Verify `DATABASE_URL` includes `?sslmode=require` for Neon.
+- Check that your Neon database is not suspended (free-tier auto-suspends on inactivity).
+- Test: `npx prisma db pull`
+
+</details>
+
+<details>
+<summary><strong>Chat returns rate limit errors</strong></summary>
+
+Groq free tier has an 8,000 TPM limit. The provider automatically retries with dynamic backoff (up to 30s). If you see persistent 429 errors, wait 60s between requests or upgrade your Groq plan.
+
+</details>
+
+<details>
+<summary><strong>Android app shows blank screen</strong></summary>
+
+- Verify `server.url` in `capacitor.config.json` matches your live Vercel deployment.
+- Run `npx cap sync` after changes.
+- Rebuild the APK.
+
+</details>
+
+---
+
+## Contributing
 
 1. **Fork** the repository
-2. **Create** a feature branch:
-   ```bash
-   git checkout -b feat/your-feature
-   ```
-3. **Commit** your changes:
-   ```bash
-   git commit -m 'feat: add your feature'
-   ```
-4. **Push** to your fork and **open a Pull Request**
-
-### Commit Convention
-
-This project follows [Conventional Commits](https://www.conventionalcommits.org/):
+2. **Create** a feature branch: `git checkout -b feat/your-feature`
+3. **Commit** with [Conventional Commits](https://www.conventionalcommits.org/): `git commit -m 'feat: add feature'`
+4. **Push** and open a Pull Request
 
 | Prefix | Purpose |
 |--------|---------|
 | `feat:` | New feature |
 | `fix:` | Bug fix |
-| `docs:` | Documentation changes |
-| `style:` | Code style / formatting |
+| `docs:` | Documentation |
 | `refactor:` | Code refactoring |
-| `test:` | Adding or updating tests |
-| `chore:` | Maintenance tasks |
+| `test:` | Tests |
+| `chore:` | Maintenance |
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
----
-
 <div align="center">
 
-**Built with ❤️ for a hackathon**
-
-[⬆ Back to Top](#-jobtracker-ai)
+[Back to Top](#campus-career-copilot)
 
 </div>
