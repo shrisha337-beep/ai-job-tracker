@@ -11,7 +11,7 @@
  */
 
 import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env.local", override: true });
 
 async function main() {
   const { prisma } = await import("../src/lib/prisma");

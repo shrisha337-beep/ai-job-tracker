@@ -12,7 +12,7 @@
  */
 
 import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env.local", override: true });
 
 async function main() {
   // Dynamic import ensures process.env is populated from .env.local before prisma loads
@@ -21,7 +21,7 @@ async function main() {
   );
 
   console.log("================================================================================");
-  console.log(" Campus Career Pilot — Judge Bearer Token Generator (MCP Endpoint)");
+  console.log(" Campus Career Copilot — Judge Bearer Token Generator (MCP Endpoint)");
   console.log("================================================================================");
 
   try {

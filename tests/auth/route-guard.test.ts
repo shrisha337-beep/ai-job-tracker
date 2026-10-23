@@ -16,7 +16,7 @@ function passedThrough(res: Response) {
 }
 
 describe("isPublicPath", () => {
-  it.each(["/", "/login", "/api/auth/signin", "/api/auth/callback/google", "/privacy", "/terms"])(
+  it.each(["/", "/login", "/api/auth/signin", "/api/auth/callback/google", "/api/mcp", "/privacy", "/terms"])(
     "treats %s as public",
     (p) => expect(isPublicPath(p)).toBe(true)
   );
@@ -48,7 +48,7 @@ describe("proxy route guard (unauthenticated)", () => {
     }
   );
 
-  it.each(["/", "/login", "/privacy", "/terms", "/api/auth/session", "/favicon.ico", "/manifest.webmanifest"])(
+  it.each(["/", "/login", "/privacy", "/terms", "/api/auth/session", "/api/mcp", "/favicon.ico", "/manifest.webmanifest"])(
     "lets public path %s through",
     (p) => expect(passedThrough(proxy(request(p)))).toBe(true)
   );

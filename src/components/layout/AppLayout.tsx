@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {!sidebarCollapsed && (
             <div className="flex flex-col min-w-0">
               <span className="font-bold text-xs tracking-wider uppercase text-[var(--color-foreground)] whitespace-nowrap">
-                Job Tracker
+                Career Copilot
               </span>
               <span className="text-[10px] font-mono text-[var(--color-muted-foreground)] leading-none mt-0.5">
                 AI Platform

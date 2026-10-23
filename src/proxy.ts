@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Public paths that don't require auth.
 // "/" must match exactly — a prefix match on "/" would make every route public.
 const PUBLIC_EXACT = ["/"];
-const PUBLIC_PREFIXES = ["/login", "/api/auth", "/privacy", "/terms"];
+const PUBLIC_PREFIXES = ["/login", "/api/auth", "/api/mcp", "/privacy", "/terms"];
 
 export function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT.includes(pathname)) return true;

@@ -15,7 +15,7 @@
  */
 
 import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env.local", override: true });
 
 import http from "node:http";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -115,7 +115,7 @@ async function startLocalMcpServer(
 
 async function runSmokeTest() {
   console.log("================================================================================");
-  console.log(" Campus Career Pilot — MCP Streamable HTTP Smoke Test");
+  console.log(" Campus Career Copilot — MCP Streamable HTTP Smoke Test");
   console.log("================================================================================");
   console.log(`SDK Supported Protocol Versions: ${JSON.stringify(SUPPORTED_PROTOCOL_VERSIONS)}`);
 

@@ -2,9 +2,9 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Job Tracker",
-    short_name: "Job Tracker",
-    description: "Structured job application pipeline and resume match analysis",
+    name: "Campus Career Copilot",
+    short_name: "Career Copilot",
+    description: "AI-powered career copilot, internship matching, adaptive DSA prep, and application pipeline tracker",
     start_url: "/",
     display: "standalone",
     background_color: "#09090b",

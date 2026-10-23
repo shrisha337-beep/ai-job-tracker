@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🚀 JobTracker AI
+# 🚀 Campus Career Copilot
 
-### AI-Powered Job Application Tracking Platform
+### AI-Powered Placement Prep, MCP Server & Job Tracking Platform
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -29,7 +29,7 @@ This repository is being extended during the Amazon Hackathon (Alexa+ simulated 
 
 ## 🔌 Model Context Protocol (MCP) Server — Stage 1 Evidence
 
-Campus Career Pilot exposes an official Model Context Protocol (MCP) server over **Streamable HTTP** at `/api/mcp`, implementing the latest protocol specification **`2025-11-25`** via `@modelcontextprotocol/sdk`.
+Campus Career Copilot exposes an official Model Context Protocol (MCP) server over **Streamable HTTP** at `/api/mcp`, implementing the latest protocol specification **`2025-11-25`** via `@modelcontextprotocol/sdk`.
 
 ### Runtime Verification & Smoke Test Evidence
 The endpoint is verified via `scripts/mcp-smoke.ts` and passes all required Stage 1 checks:
@@ -40,7 +40,7 @@ The endpoint is verified via `scripts/mcp-smoke.ts` and passes all required Stag
 
 ```text
 ================================================================================
- Campus Career Pilot — MCP Streamable HTTP Smoke Test
+ Campus Career Copilot — MCP Streamable HTTP Smoke Test
 ================================================================================
 SDK Supported Protocol Versions: ["2025-11-25","2025-06-18","2025-03-26","2024-11-05","2024-10-07"]
 

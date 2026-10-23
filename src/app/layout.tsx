@@ -17,15 +17,16 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://jobtracker.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Job Tracker — Track your job search with clarity",
+  title: "Campus Career Copilot — AI Career Advisor & Application Tracker",
   description:
-    "Visual kanban pipeline for job applications, AI-powered job description parsing, and resume match scoring. Free and open source.",
+    "AI-powered placement career copilot with personalized internship matching, adaptive DSA preparation, and visual application tracking.",
   keywords: [
-    "job tracker",
+    "career copilot",
+    "campus placements",
+    "internship matcher",
+    "dsa practice",
     "application tracker",
-    "resume matcher",
-    "kanban pipeline",
-    "job application management",
+    "resume analysis",
   ],
   icons: {
     icon: [
@@ -35,16 +36,16 @@ export const metadata: Metadata = {
     apple: "/icon.svg",
   },
   openGraph: {
-    title: "Job Tracker — Track your job search with clarity",
+    title: "Campus Career Copilot — AI Career Advisor & Application Tracker",
     description:
-      "Visual kanban pipeline for job applications, AI-powered job description parsing, and resume match scoring.",
+      "AI-powered placement career copilot with personalized internship matching, adaptive DSA preparation, and visual application tracking.",
     url: siteUrl,
-    siteName: "Job Tracker",
+    siteName: "Campus Career Copilot",
     type: "website",
   },
   appleWebApp: {
     capable: true,
-    title: "Job Tracker",
+    title: "Career Copilot",
     statusBarStyle: "default",
   },
 };

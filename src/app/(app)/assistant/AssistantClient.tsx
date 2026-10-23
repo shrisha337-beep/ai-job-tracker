@@ -192,7 +192,7 @@ export function AssistantClient({
           </div>
           <div>
             <h1 className="text-sm font-semibold tracking-tight text-[var(--color-foreground)]">
-              Campus Career Pilot Assistant
+              Campus Career Copilot Assistant
             </h1>
             <p className="text-[11px] text-[var(--color-muted-foreground)]">
               Grounded in live placement data, active resume scores, and Leitner mastery
