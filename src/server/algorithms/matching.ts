@@ -73,11 +73,46 @@ export function extractSkillIds(text: string): Set<string> {
   return result;
 }
 
+export interface ResumeSkillSource {
+  rawText?: string | null;
+  parsedSkills?: string[];
+}
+
+export function getResumeSkillIds(
+  source: ResumeSkillSource | string[] | ReadonlySet<string> | null | undefined
+): Set<string> {
+  if (!source) return new Set<string>();
+
+  if (typeof source === "object" && !Array.isArray(source) && !(source instanceof Set)) {
+    if (source.rawText && source.rawText.trim().length > 0) {
+      return extractSkillIds(source.rawText);
+    }
+    if (Array.isArray(source.parsedSkills)) {
+      const ids = new Set<string>();
+      for (const skill of source.parsedSkills) {
+        const resolved = resolveSkillId(skill);
+        if (resolved) ids.add(resolved);
+      }
+      return ids;
+    }
+    return new Set<string>();
+  }
+
+  const list = source instanceof Set ? Array.from(source) : (Array.isArray(source) ? source : []);
+  const ids = new Set<string>();
+  for (const s of list) {
+    const resolved = resolveSkillId(s);
+    if (resolved) ids.add(resolved);
+  }
+  return ids;
+}
+
 export function scoreMatch(
   resumeSkills: ReadonlySet<string>,
   requiredSkills: string[],
   preferredSkills: string[] = []
 ): MatchResult {
+  const normalizedResumeSkills = getResumeSkillIds(resumeSkills);
   const unmapped: string[] = [];
   const mappedRequired = new Set<string>();
   const mappedPreferred = new Set<string>();
@@ -102,7 +137,7 @@ export function scoreMatch(
   const countWeight = (skills: Set<string>, w: number) => {
     for (const skill of skills) {
       totalWeight += w;
-      if (resumeSkills.has(skill)) {
+      if (normalizedResumeSkills.has(skill)) {
         matchedWeight += w;
         matched.push(skill);
       } else {

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { MS_PER_DAY } from "@/lib/time";
 import { buildPlan, type PlannedTask } from "@/server/algorithms/planner";
-import { scoreMatch } from "@/server/algorithms/matching";
+import { scoreMatch, getResumeSkillIds } from "@/server/algorithms/matching";
 
 export interface CreateOrReplanInput {
   hoursPerDay?: number;
@@ -43,7 +43,7 @@ export async function createOrReplan(
       prisma.userProfile.findUnique({ where: { userId } }),
       prisma.resume.findFirst({
         where: { userId, isActive: true },
-        select: { parsedSkills: true },
+        select: { rawText: true, parsedSkills: true },
       }),
       prisma.application.findMany({
         where: {
@@ -82,7 +82,7 @@ export async function createOrReplan(
 
   let bestMatchScore: number | undefined;
   if (resume && topListings.length > 0) {
-    const skillSet = new Set(resume.parsedSkills);
+    const skillSet = getResumeSkillIds(resume);
     const scores = topListings.map(
       (l) => scoreMatch(skillSet, l.skills, l.preferredSkills).score
     );

@@ -2,6 +2,7 @@ import type { WorkMode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { RoleTag } from "@/lib/role-tags";
 import { rankListings, type RankingResult } from "@/server/algorithms/ranking";
+import { getResumeSkillIds } from "@/server/algorithms/matching";
 
 export interface RankInternshipsInput {
   mode?: WorkMode;
@@ -37,7 +38,7 @@ export async function rankUserInternships(
     prisma.userProfile.findUnique({ where: { userId } }),
     prisma.resume.findFirst({
       where: { userId, isActive: true },
-      select: { parsedSkills: true },
+      select: { rawText: true, parsedSkills: true },
     }),
     prisma.listing.findMany(),
   ]);
@@ -48,7 +49,7 @@ export async function rankUserInternships(
   return rankListings(
     listings,
     {
-      resumeSkills: resume ? new Set(resume.parsedSkills) : undefined,
+      resumeSkills: resume ? getResumeSkillIds(resume) : undefined,
       targetRoles,
       preferredMode,
     },

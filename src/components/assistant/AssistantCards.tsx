@@ -14,7 +14,7 @@ export interface CardPayload {
 // -----------------------------------------------------------------------------
 export function ScorecardCard({ data }: { data: Record<string, any> }) {
   const isProgress = "readiness" in data;
-  const isResumeScorecard = "hasResume" in data || "bestRoleTags" in data || "parsedSkills" in data;
+  const isResumeScorecard = "hasResume" in data || "bestRoleTags" in data || "matchedSkills" in data;
 
   if (isResumeScorecard && data.hasResume === false) {
     return (
@@ -32,11 +32,16 @@ export function ScorecardCard({ data }: { data: Record<string, any> }) {
     );
   }
 
+  const topListing = isResumeScorecard ? data.topListings?.[0] : null;
   const score = isProgress
     ? data.readiness?.score
     : isResumeScorecard
-    ? data.bestRoleTags?.[0]?.avgScore ?? 0
+    ? (topListing?.score ?? (typeof data.score === "number" ? data.score : null))
     : data.overallMatch;
+
+  const grade = isResumeScorecard
+    ? (topListing?.grade ?? data.grade ?? null)
+    : null;
 
   const title = isProgress
     ? "Placement Readiness Scorecard"
@@ -44,26 +49,44 @@ export function ScorecardCard({ data }: { data: Record<string, any> }) {
     ? `Resume Match Analysis ${data.filename ? `(${data.filename})` : ""}`
     : "Resume Match Analysis";
 
-  const matchedSkills: string[] = isResumeScorecard
-    ? data.parsedSkills || []
-    : data.matchedSkills || [];
+  const matchedSkills: string[] = data.matchedSkills || [];
+
+  const matchedSet = new Set(matchedSkills.map((s: string) => s.toLowerCase().trim()));
 
   const rawGaps = isResumeScorecard ? data.topGaps || [] : data.missingSkills || [];
-  const missingSkills: string[] = rawGaps.map((g: any) => (typeof g === "string" ? g : g.name || ""));
+  const missingSkills: string[] = rawGaps
+    .map((g: any) => (typeof g === "string" ? g : g.name || ""))
+    .filter((s: string) => s && !matchedSet.has(s.toLowerCase().trim()));
 
   return (
     <div className="mt-3 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 shadow-xs">
       <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2.5">
         <div className="flex items-center gap-2">
           <Award className="h-4 w-4 text-[var(--color-primary)]" />
-          <h4 className="text-xs font-semibold tracking-wide uppercase text-[var(--color-foreground)]">
-            {title}
-          </h4>
+          <div>
+            <h4 className="text-xs font-semibold tracking-wide uppercase text-[var(--color-foreground)]">
+              {title}
+            </h4>
+            {isResumeScorecard && topListing && (
+              <p className="text-[11px] text-[var(--color-muted-foreground)]">
+                Top match: {topListing.title} at {topListing.company}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-xl font-bold text-[var(--color-primary)]">{score ?? 0}</span>
-          <span className="text-xs text-[var(--color-muted-foreground)]">/100</span>
-        </div>
+        {typeof score === "number" && (
+          <div className="flex items-center gap-2">
+            {grade && (
+              <span className="rounded bg-[var(--color-primary-muted)] px-1.5 py-0.5 text-xs font-bold text-[var(--color-primary)]">
+                Grade {grade}
+              </span>
+            )}
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-bold text-[var(--color-primary)]">{score}</span>
+              <span className="text-xs text-[var(--color-muted-foreground)]">/100</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Progress Breakdown */}

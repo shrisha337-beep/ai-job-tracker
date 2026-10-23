@@ -68,21 +68,24 @@ export const resumeAnalyzerTool: ToolDefinition = {
     }
 
     const card = res.scorecard;
+    const topListing = card.top3Listings[0];
     const topRole = card.bestRoleTags[0];
     const topRoleText = topRole ? `${topRole.roleTag} (${topRole.avgScore}% avg match)` : "general SDE";
     const gapsList = card.top5Gaps.slice(0, 5).map((g) => g.name).join(", ");
-    const top3Titles = card.top3Listings.map((l) => `${l.title} at ${l.company} (${l.score}%)`).join(", ");
+    const top3Titles = card.top3Listings.map((l) => `${l.title} at ${l.company} (${l.score}%, Grade ${l.grade})`).join(", ");
 
     return {
-      text: `Resume (${res.filename}) analyzed with ${res.parsedSkills.length} skills identified. Top role alignment is ${topRoleText}. Closest matching listings: ${top3Titles || "None"}. Priority skills to build: ${gapsList || "None"}.`,
+      text: `Resume (${res.filename}) analyzed with ${res.matchedSkills.length} skills identified. Top match: ${topListing ? `${topListing.title} at ${topListing.company} (${topListing.score}%, Grade ${topListing.grade})` : "None"}. Top role alignment is ${topRoleText}. Closest matching listings: ${top3Titles || "None"}. Priority skills to build: ${gapsList || "None"}.`,
       structured: {
         card: {
           type: "resume_scorecard",
           data: {
             hasResume: true,
             filename: res.filename,
-            parsedSkillsCount: res.parsedSkills.length,
-            parsedSkills: res.parsedSkills.slice(0, 15),
+            matchedSkillsCount: res.matchedSkills.length,
+            matchedSkills: res.matchedSkills,
+            score: topListing?.score,
+            grade: topListing?.grade,
             bestRoleTags: card.bestRoleTags.slice(0, 3),
             topListings: card.top3Listings.slice(0, 3),
             topGaps: card.top5Gaps.slice(0, 5),

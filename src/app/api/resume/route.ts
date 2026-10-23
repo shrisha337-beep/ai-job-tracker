@@ -3,8 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import pdf from "pdf-parse";
+import { extractSkillIds } from "@/server/algorithms/matching";
+import taxonomy from "@/data/taxonomy.json";
 
-
+const SKILL_NAME = new Map<string, string>(
+  taxonomy.skills.map((s) => [s.id, s.name])
+);
 
 // POST /api/resume : upload and store resume text
 export async function POST(req: NextRequest) {
@@ -72,20 +76,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract skills using simple keyword matching (fast, no AI needed)
-    const SKILL_KEYWORDS = [
-      "JavaScript", "TypeScript", "Python", "Java", "Go", "Rust", "C++", "C#", "Ruby", "PHP",
-      "React", "Next.js", "Vue", "Angular", "Svelte", "Node.js", "Express", "FastAPI", "Django",
-      "PostgreSQL", "MySQL", "MongoDB", "Redis", "SQLite", "Prisma", "GraphQL", "REST",
-      "AWS", "GCP", "Azure", "Docker", "Kubernetes", "CI/CD", "GitHub Actions", "Terraform",
-      "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "NLP", "Computer Vision",
-      "Git", "Linux", "Agile", "Scrum", "System Design", "Microservices", "Kafka", "RabbitMQ",
-      "HTML", "CSS", "Tailwind", "Figma", "Product Management", "Data Analysis", "SQL",
-    ];
-
-    const parsedSkills = SKILL_KEYWORDS.filter((skill) =>
-      rawText.toLowerCase().includes(skill.toLowerCase())
-    );
+    // Extract skills using taxonomy-based extraction
+    const skillIds = extractSkillIds(rawText);
+    const parsedSkills = Array.from(skillIds)
+      .map((id) => SKILL_NAME.get(id) ?? id)
+      .sort((a, b) => a.localeCompare(b));
 
     // Mark all other resumes as inactive
     await prisma.resume.updateMany({

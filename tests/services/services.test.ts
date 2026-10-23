@@ -53,6 +53,7 @@ describe.skipIf(!process.env.DATABASE_URL)("Server Services Suite (demo-driven)"
   afterAll(async () => {
     await cleanupTestData();
     await prisma.user.deleteMany({ where: { id: { in: TEST_USERS } } }).catch(() => {});
+    await prisma.$disconnect();
   }, 30000);
 
   describe("1. resume service", () => {

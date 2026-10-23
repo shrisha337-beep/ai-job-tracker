@@ -1,7 +1,7 @@
 import type { Listing, WorkMode } from "@prisma/client";
 import type { RoleTag } from "@/lib/role-tags";
 import { MS_PER_DAY } from "@/lib/time";
-import { scoreMatch } from "./matching";
+import { scoreMatch, getResumeSkillIds } from "./matching";
 
 export const WEIGHT_MATCH = 0.5;
 export const WEIGHT_ROLE_FIT = 0.2;
@@ -90,7 +90,8 @@ export function rankListings(
 ): RankingResult {
   const entries: RankedEntry[] = [];
   const targetRoles = profile.targetRoles ?? [];
-  const resumeMissing = !profile.resumeSkills || profile.resumeSkills.size === 0;
+  const resumeSkills = profile.resumeSkills ? getResumeSkillIds(profile.resumeSkills) : undefined;
+  const resumeMissing = !resumeSkills || resumeSkills.size === 0;
   let hiddenNoStipend = 0;
 
   for (const listing of listings) {
@@ -117,9 +118,9 @@ export function rankListings(
     let matchedSkills: string[] = [];
     let missingSkills: string[] = [];
 
-    if (!resumeMissing && profile.resumeSkills) {
+    if (!resumeMissing && resumeSkills) {
       const matchResult = scoreMatch(
-        profile.resumeSkills,
+        resumeSkills,
         listing.skills,
         listing.preferredSkills
       );

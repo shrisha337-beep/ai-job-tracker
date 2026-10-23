@@ -4,6 +4,7 @@ import {
   extractSkillIds,
   scoreMatch,
   resolveSkillId,
+  getResumeSkillIds,
   SPECIAL_MATCH_IDS,
 } from "@/server/algorithms/matching";
 
@@ -184,5 +185,73 @@ describe("A1: scoreMatch calculations and grade boundaries", () => {
     const res = scoreMatch(new Set(matched), sampleSkills, []);
     expect(res.score).toBe(targetScore);
     expect(res.grade).toBe(expectedGrade);
+  });
+});
+
+describe("Regression: resume skills taxonomy ID normalization", () => {
+  it("a resume whose text contains Python, Java, React scores > 0 against a listing requiring python+java+react and does not list them as missing", () => {
+    const rawText = "Student candidate with strong software engineering skills in Python, Java, and React.";
+    const resumeSkills = getResumeSkillIds({
+      rawText,
+      parsedSkills: ["Python", "Java", "React"],
+    });
+
+    const listingRequired = ["python", "java", "react"];
+    const match = scoreMatch(resumeSkills, listingRequired);
+
+    expect(match.score).toBeGreaterThan(0);
+    expect(match.score).toBe(100);
+    expect(match.grade).toBe("A");
+    expect(match.matched.sort()).toEqual(["java", "python", "react"]);
+    expect(match.missing).toEqual([]);
+    expect(match.missing).not.toContain("python");
+    expect(match.missing).not.toContain("java");
+    expect(match.missing).not.toContain("react");
+  });
+
+  it("handles resume with only display names in parsedSkills", () => {
+    const resumeSkills = getResumeSkillIds({
+      parsedSkills: ["Python", "Java", "React"],
+    });
+
+    const listingRequired = ["python", "java", "react"];
+    const match = scoreMatch(resumeSkills, listingRequired);
+
+    expect(match.score).toBeGreaterThan(0);
+    expect(match.score).toBe(100);
+    expect(match.matched.sort()).toEqual(["java", "python", "react"]);
+    expect(match.missing).toEqual([]);
+  });
+
+  it("text containing only 'JavaScript, MongoDB' must NOT yield Java, Go or Redis in the stored/displayed skills", () => {
+    const rawText = "Experienced developer working with JavaScript, MongoDB";
+    const skillIds = extractSkillIds(rawText);
+    const skillNameMap = new Map(taxonomy.skills.map((s) => [s.id, s.name]));
+    const storedOrDisplayedSkills = Array.from(skillIds)
+      .map((id) => skillNameMap.get(id) ?? id)
+      .sort();
+
+    // Check raw extracted IDs
+    expect(skillIds.has("javascript")).toBe(true);
+    expect(skillIds.has("mongodb")).toBe(true);
+    expect(skillIds.has("java")).toBe(false);
+    expect(skillIds.has("go")).toBe(false);
+    expect(skillIds.has("redis")).toBe(false);
+
+    // Check stored/displayed skill names
+    expect(storedOrDisplayedSkills).toContain("JavaScript");
+    expect(storedOrDisplayedSkills).toContain("MongoDB");
+    expect(storedOrDisplayedSkills).not.toContain("Java");
+    expect(storedOrDisplayedSkills).not.toContain("Go");
+    expect(storedOrDisplayedSkills).not.toContain("Redis");
+
+    // Check getResumeSkillIds derived from the resume
+    const derivedIds = getResumeSkillIds({
+      rawText,
+      parsedSkills: storedOrDisplayedSkills,
+    });
+    expect(derivedIds.has("java")).toBe(false);
+    expect(derivedIds.has("go")).toBe(false);
+    expect(derivedIds.has("redis")).toBe(false);
   });
 });

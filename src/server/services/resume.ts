@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { extractSkillIds, scoreMatch } from "@/server/algorithms/matching";
+import { extractSkillIds, scoreMatch, resolveSkillId, getResumeSkillIds } from "@/server/algorithms/matching";
 import { ROLE_TAGS, type RoleTag } from "@/lib/role-tags";
 import taxonomy from "@/data/taxonomy.json";
 
@@ -45,6 +45,7 @@ export interface ResumeServiceResult {
   resumeId: string | null;
   filename: string | null;
   parsedSkills: string[];
+  matchedSkills: string[];
   scorecard: ResumeScorecard | null;
 }
 
@@ -60,21 +61,29 @@ export async function getResumeScorecard(userId: string): Promise<ResumeServiceR
       resumeId: null,
       filename: null,
       parsedSkills: [],
+      matchedSkills: [],
       scorecard: null,
     };
   }
 
+  const resumeSkillSet = getResumeSkillIds(resume);
+  const matchedSkills = Array.from(resumeSkillSet)
+    .map((id) => SKILL_NAME.get(id) ?? id)
+    .sort((a, b) => a.localeCompare(b));
+
   const skillsByCategory: Record<string, string[]> = {};
-  for (const skillId of resume.parsedSkills) {
-    const category = SKILL_CATEGORY.get(skillId) ?? "other";
+  for (const id of resumeSkillSet) {
+    const category = SKILL_CATEGORY.get(id) ?? "other";
     if (!skillsByCategory[category]) {
       skillsByCategory[category] = [];
     }
-    skillsByCategory[category].push(skillId);
+    skillsByCategory[category].push(SKILL_NAME.get(id) ?? id);
+  }
+  for (const category of Object.keys(skillsByCategory)) {
+    skillsByCategory[category].sort((a, b) => a.localeCompare(b));
   }
 
   const listings = await prisma.listing.findMany();
-  const resumeSkillSet = new Set(resume.parsedSkills);
 
   const scoredListings = listings.map((listing) => ({
     listing,
@@ -114,11 +123,13 @@ export async function getResumeScorecard(userId: string): Promise<ResumeServiceR
   const gapCounts = new Map<string, number>();
   for (const item of scoredListings) {
     for (const missingSkill of item.match.missing) {
+      if (resumeSkillSet.has(missingSkill)) continue;
       gapCounts.set(missingSkill, (gapCounts.get(missingSkill) ?? 0) + 1);
     }
   }
 
   const top5Gaps: SkillGap[] = Array.from(gapCounts.entries())
+    .filter(([skill]) => !resumeSkillSet.has(skill))
     .map(([skill, count]) => ({
       skill,
       name: SKILL_NAME.get(skill) ?? skill,
@@ -132,6 +143,7 @@ export async function getResumeScorecard(userId: string): Promise<ResumeServiceR
     resumeId: resume.id,
     filename: resume.filename,
     parsedSkills: resume.parsedSkills,
+    matchedSkills,
     scorecard: {
       skillsByCategory,
       bestRoleTags,
