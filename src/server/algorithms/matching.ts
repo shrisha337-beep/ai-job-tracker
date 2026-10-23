@@ -78,34 +78,42 @@ export interface ResumeSkillSource {
   parsedSkills?: string[];
 }
 
+export function isResumeSource(s: unknown): s is ResumeSkillSource {
+  return (
+    typeof s === "object" &&
+    s !== null &&
+    !Array.isArray(s) &&
+    ("rawText" in s || "parsedSkills" in s)
+  );
+}
+
 export function getResumeSkillIds(
   source: ResumeSkillSource | string[] | ReadonlySet<string> | null | undefined
 ): Set<string> {
   if (!source) return new Set<string>();
 
-  if (Array.isArray(source) || source instanceof Set || "has" in source) {
-    const ids = new Set<string>();
-    for (const s of source) {
-      const resolved = resolveSkillId(s);
-      if (resolved) ids.add(resolved);
+  if (isResumeSource(source)) {
+    if (source.rawText && source.rawText.trim().length > 0) {
+      return extractSkillIds(source.rawText);
     }
-    return ids;
-  }
-
-  if (source.rawText && source.rawText.trim().length > 0) {
-    return extractSkillIds(source.rawText);
-  }
-
-  if (Array.isArray(source.parsedSkills)) {
-    const ids = new Set<string>();
-    for (const skill of source.parsedSkills) {
-      const resolved = resolveSkillId(skill);
-      if (resolved) ids.add(resolved);
+    if (Array.isArray(source.parsedSkills)) {
+      const ids = new Set<string>();
+      for (const skill of source.parsedSkills) {
+        const resolved = resolveSkillId(skill);
+        if (resolved) ids.add(resolved);
+      }
+      return ids;
     }
-    return ids;
+    return new Set<string>();
   }
 
-  return new Set<string>();
+  const list = Array.from(source);
+  const ids = new Set<string>();
+  for (const s of list) {
+    const resolved = resolveSkillId(s);
+    if (resolved) ids.add(resolved);
+  }
+  return ids;
 }
 
 export function scoreMatch(
