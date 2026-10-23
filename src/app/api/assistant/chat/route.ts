@@ -6,7 +6,7 @@
  * Implements:
  * - NextAuth session authentication (userId derived strictly from session)
  * - LLM agent loop using getLlmProvider() and the unified tool registry
- * - Max 3 tool iterations per turn (1 tool = 1 service call)
+ * - Max 5 tool iterations per turn (1 tool = 1 service call)
  * - Strict system prompt grounding all metrics in tool outputs
  * - Memory across sessions: loads last 10 messages from previous session for new sessions
  * - Typed rate limit handling: answers from retrieved tool results on 429 with notice
@@ -35,7 +35,8 @@ Strict Invariants:
    - For tracker/applications: call tracker_list or tracker_add.
    - For daily preparation plan: call study_plan.
    - For evaluating a DSA answer: call dsa_evaluate.
-4. After dsa_evaluate is called, explicitly explain what changed in the study plan, Leitner box level, or mastery score.
+4. When asked to track internships and plan study in the same turn, call tracker_add for the target listings, followed by study_plan.
+5. After dsa_evaluate is called, explicitly explain what changed in the study plan, Leitner box level, or mastery score.
 Keep your responses helpful, structured, concise, and actionable.`;
 
 export async function POST(req: Request): Promise<Response> {
@@ -165,14 +166,24 @@ export async function POST(req: Request): Promise<Response> {
     const executedToolResults: Array<{ name: string; text: string; card: unknown }> = [];
     const llm = getLlmProvider();
 
+    let turnPromptTokens = 0;
+    let turnCompletionTokens = 0;
+    let turnTotalTokens = 0;
+
     try {
       let turnCompleted = false;
       let iterations = 0;
-      const MAX_ITERATIONS = 3;
+      const MAX_ITERATIONS = 5;
 
       while (!turnCompleted && iterations < MAX_ITERATIONS) {
         iterations++;
         const response = await llm.chat(conversationMessages, llmTools);
+
+        if (response.usage) {
+          turnPromptTokens += response.usage.promptTokens;
+          turnCompletionTokens += response.usage.completionTokens;
+          turnTotalTokens += response.usage.totalTokens;
+        }
 
         if (response.toolCalls && response.toolCalls.length > 0) {
           // Assistant issued tool calls
@@ -263,7 +274,14 @@ export async function POST(req: Request): Promise<Response> {
         });
       }
 
-      await sendEvent("done", { sessionId: chatSession.id });
+      await sendEvent("done", {
+        sessionId: chatSession.id,
+        usage: {
+          promptTokens: turnPromptTokens,
+          completionTokens: turnCompletionTokens,
+          totalTokens: turnTotalTokens,
+        },
+      });
     } catch (err: unknown) {
       console.error("[assistant:chat] Error in turn loop:", {
         name: (err as any)?.name || (err instanceof Error ? err.name : "UnknownError"),
@@ -297,7 +315,17 @@ export async function POST(req: Request): Promise<Response> {
           },
         });
 
-        await sendEvent("done", { sessionId: chatSession.id });
+        await sendEvent("done", {
+          sessionId: chatSession.id,
+          usage:
+            turnTotalTokens > 0
+              ? {
+                  promptTokens: turnPromptTokens,
+                  completionTokens: turnCompletionTokens,
+                  totalTokens: turnTotalTokens,
+                }
+              : undefined,
+        });
       } else {
         // Never expose stack traces or raw errors
         await sendEvent("error", {

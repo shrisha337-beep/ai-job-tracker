@@ -145,8 +145,13 @@ export const internshipSearchTool: ToolDefinition<typeof internshipSearchSchema>
       };
     }
 
-    const first = topRanked[0];
-    const topSummary = `Found ${rankingResult.ranked.length} matching internships (displaying top ${topRanked.length}). Top pick: ${first.listing.title} at ${first.listing.company} (${first.listing.location}, ${first.listing.mode}) with rank score ${first.totalRank}/100 (Match: ${first.subScores.match}%, Role fit: ${first.subScores.roleFit}, Urgency: ${first.subScores.urgency}).`;
+    const itemsSummary = topRanked
+      .map(
+        (item, idx) =>
+          `${idx + 1}. [ID: ${item.listing.id}] ${item.listing.title} at ${item.listing.company} (${item.listing.location}, ${item.listing.mode}) - Score: ${item.totalRank}/100, Match: ${Math.round(item.subScores.match * 100)}%, Deadline in ${item.daysLeft.toFixed(1)} days`
+      )
+      .join("\n");
+    const topSummary = `Found ${rankingResult.ranked.length} matching internships (displaying top ${topRanked.length}):\n${itemsSummary}`;
 
     return {
       text: topSummary,
@@ -181,7 +186,7 @@ export const internshipSearchTool: ToolDefinition<typeof internshipSearchSchema>
 // -----------------------------------------------------------------------------
 
 const trackerAddSchema = z.object({
-  listingId: z.string().min(1).describe("The listing ID from internship search to track on your pipeline board"),
+  listingId: z.string().min(1).describe("The listing ID or slug from internship search (e.g. listing ID or slug like 'salesforce-amts-intern') to track on your pipeline board"),
   status: z
     .enum(["BOOKMARKED", "APPLIED", "SCREENING", "INTERVIEW", "OFFER", "REJECTED"])
     .default("BOOKMARKED")
@@ -352,7 +357,7 @@ export const dsaNextTool: ToolDefinition<typeof dsaNextSchema> = {
     const revisionText = next.revisionDue ? " (Scheduled Leitner spaced repetition is due!)" : "";
 
     return {
-      text: `Next practice question: "${next.question.title}" [${next.actualDifficulty}] on topic "${next.topic}" (Priority: ${priorityScore})${revisionText}. Prompt: ${next.prompt}`,
+      text: `Next practice question [ID: ${next.question.id}]: "${next.question.title}" [${next.actualDifficulty}] on topic "${next.topic}" (Priority: ${priorityScore})${revisionText}. Prompt: ${next.prompt}`,
       structured: {
         card: {
           type: "quiz_card",
@@ -380,7 +385,7 @@ export const dsaNextTool: ToolDefinition<typeof dsaNextSchema> = {
 // -----------------------------------------------------------------------------
 
 const dsaEvaluateSchema = z.object({
-  questionId: z.string().min(1).describe("The question ID from dsa_next being evaluated"),
+  questionId: z.string().min(1).describe("The question ID or slug from dsa_next being evaluated"),
   answer: z
     .string()
     .min(1)
@@ -394,10 +399,26 @@ export const dsaEvaluateTool: ToolDefinition<typeof dsaEvaluateSchema> = {
     "Evaluates the user's answer/solution for a DSA question against its rubric (correctness 50%, complexity 30%, edge cases 20%), updates their topic mastery via exponential moving average, advances or resets their Leitner box, and adapts their study plan. Use when the user submits an answer or solution to a practice problem.",
   inputSchema: dsaEvaluateSchema,
   handler: async (userId: string, args): Promise<ToolResult> => {
-    const question = await prisma.question.findUniqueOrThrow({
-      where: { id: args.questionId },
+    let question = await prisma.question.findFirst({
+      where: {
+        OR: [{ id: args.questionId }, { slug: args.questionId }],
+      },
       select: { id: true, title: true, prompt: true, rubric: true, topic: true },
     });
+
+    if (!question) {
+      const latest = await getNextPracticeQuestion(userId);
+      if (latest) {
+        question = await prisma.question.findUnique({
+          where: { id: latest.question.id },
+          select: { id: true, title: true, prompt: true, rubric: true, topic: true },
+        });
+      }
+    }
+
+    if (!question) {
+      throw new Error(`Question "${args.questionId}" not found. Please provide a valid question ID from dsa_next.`);
+    }
 
     const grading = await gradeAnswer(
       {

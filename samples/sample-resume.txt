@@ -1,0 +1,32 @@
+JORDAN LEE
+Bengaluru, India | contact.candidate@example.edu | +91-98765-00000 | github.com/example-jordan | linkedin.com/in/example-jordan
+
+EDUCATION
+State Institute of Technology, Bengaluru
+Bachelor of Technology in Computer Science and Engineering | 2022 – 2026
+CGPA: 8.8 / 10.0
+
+TECHNICAL SKILLS
+• Programming Languages: Java, Python, JavaScript, TypeScript, SQL
+• Web & Backend: React, Node.js, REST APIs
+• Databases & DevOps: PostgreSQL, Docker, Git
+• Computer Science Fundamentals: Data Structures & Algorithms, Object-Oriented Programming
+
+PROJECTS
+Campus Resource Tracker | React, Node.js, PostgreSQL, TypeScript, Docker
+• Built an end-to-end web platform for scheduling university facilities and laboratory equipment.
+• Architected normalized schemas with PostgreSQL and exposed performant REST APIs via Node.js.
+• Built a responsive user interface with React and TypeScript, incorporating client-side state caching.
+• Containerized the complete environment with Docker for reproducible development setups.
+• Maintained modular code quality, branching workflows, and commit history using Git.
+
+Algorithmic Trade Execution Simulator | Java, Data Structures & Algorithms, Object-Oriented Programming
+• Designed an in-memory limit order book matching engine in Java using priority queues and hash maps.
+• Modeled trading entities following Object-Oriented Programming principles for clean separation of concerns.
+• Benchmark-tested throughput across simulated market feeds with optimized Data Structures & Algorithms.
+• Wrote comprehensive test suites for validating execution prices and edge-case order cancellations.
+
+Analytics Query Engine | Python, SQL
+• Implemented analytical query scripts in Python for parsing and aggregating structured usage telemetry.
+• Executed complex SQL joins, indexing, and window functions to compute cohort retention metrics.
+• Automated weekly health report generation and validation checks for data consistency.

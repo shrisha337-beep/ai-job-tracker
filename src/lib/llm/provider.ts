@@ -31,11 +31,18 @@ export interface LlmToolCall {
   arguments: Record<string, unknown>;
 }
 
+export interface LlmUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
 export interface LlmChatResponse {
   text: string;
   toolCalls: LlmToolCall[];
   model: string;
   raw?: unknown;
+  usage?: LlmUsage;
 }
 
 export interface LlmProvider {
@@ -151,7 +158,19 @@ export class OpenAiProvider implements LlmProvider {
 
           if (res.status === 429) {
             if (attempt < this.maxRetries) {
-              await new Promise((r) => setTimeout(r, 2000));
+              const retryAfterHeader = res.headers.get('retry-after');
+              let waitMs = 2000;
+              if (retryAfterHeader) {
+                const parsed = parseFloat(retryAfterHeader);
+                if (!isNaN(parsed) && parsed > 0) waitMs = Math.ceil(parsed * 1000);
+              } else {
+                const match = errText.match(/try again in ([0-9.]+)s/i);
+                if (match) {
+                  const parsed = parseFloat(match[1]);
+                  if (!isNaN(parsed) && parsed > 0) waitMs = Math.ceil(parsed * 1000) + 500;
+                }
+              }
+              await new Promise((r) => setTimeout(r, Math.min(30000, Math.max(2000, waitMs))));
               continue;
             }
             const err = new LlmRateLimitError(errMsg);
@@ -185,11 +204,20 @@ export class OpenAiProvider implements LlmProvider {
           };
         });
 
+        const usage = data.usage
+          ? {
+              promptTokens: Number(data.usage.prompt_tokens || 0),
+              completionTokens: Number(data.usage.completion_tokens || 0),
+              totalTokens: Number(data.usage.total_tokens || 0),
+            }
+          : undefined;
+
         return {
           text,
           toolCalls,
           model: data.model || model,
           raw: data,
+          usage,
         };
       } catch (err: any) {
         lastError = err instanceof Error ? err : new Error(String(err));
@@ -280,11 +308,20 @@ export class BedrockProvider implements LlmProvider {
       }
     }
 
+    const usage = response.usage
+      ? {
+          promptTokens: Number(response.usage.inputTokens || 0),
+          completionTokens: Number(response.usage.outputTokens || 0),
+          totalTokens: Number(response.usage.totalTokens || 0),
+        }
+      : undefined;
+
     return {
       text,
       toolCalls,
       model,
       raw: response,
+      usage,
     };
   }
 }
